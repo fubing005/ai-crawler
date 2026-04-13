@@ -111,7 +111,7 @@ BMad 框架已配置完成，可以使用以下技能：
 ## 联系方式
 
 - 作者：Shalabing
-- 项目链接：[https://github.com/yourusername/vscode_bmad_method_test](https://github.com/yourusername/vscode_bmad_method_test)
+- 项目链接：[https://github.com/fubing005/ai-agent-spider](https://github.com/fubing005/ai-agent-spider)
 
 ## 致谢
 
