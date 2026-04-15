@@ -21,4 +21,10 @@ workflowType: 'architecture'
 - ux-design-specification.md
 - ux-design-directions.html
 
+**新增功能说明：**
+根据 PRD 更新，MVP 范围已扩展，新增以下三个核心功能：
+1. 复杂的数据清洗和转换
+2. 实时监控和告警系统
+3. 高级反爬虫策略（验证码破解、IP 池等）
+
 准备好进行架构决策。请确认是否继续到下一步。
