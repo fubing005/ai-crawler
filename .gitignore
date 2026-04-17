@@ -68,10 +68,12 @@ _bmad/
 # _bmad-output/ 目录管理
 # 忽略 _bmad-output/ 目录中的所有内容
 _bmad-output/*
-# 例外：追踪 .html 和 .md 文件以及目录结构
-!_bmad-output/**/*.html
-!_bmad-output/**/*.md
+# 例外：追踪目录结构
 !_bmad-output/**/
+# 例外：追踪所有 .html 文件
+!_bmad-output/**/*.html
+# 特别忽略 planning-artifacts/ 中的所有 .md 文件
+_bmad-output/planning-artifacts/*.md
 
 .kilocode/
 
