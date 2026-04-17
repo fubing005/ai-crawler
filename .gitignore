@@ -64,11 +64,15 @@ logs/
 
 #bmad
 _bmad/
-# 忽略 _bmad-output/ 目录中的所有文件
-_bmad-output/
-# 例外：允许追踪 .html 文件
-!_bmad-output/
+
+# _bmad-output/ 目录管理
+# 忽略 _bmad-output/ 目录中的所有内容
+_bmad-output/*
+# 例外：追踪 .html 和 .md 文件以及目录结构
 !_bmad-output/**/*.html
+!_bmad-output/**/*.md
+!_bmad-output/**/
+
 .kilocode/
 
 #readme
