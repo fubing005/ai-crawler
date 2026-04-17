@@ -1,0 +1,6 @@
+"# Ignore all files"  
+"*"  
+""  
+"# But track .html files"  
+"!*.html"  
+"!**/*.html" 
