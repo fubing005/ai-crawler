@@ -64,4 +64,8 @@ logs/
 
 #bmad
 _bmad/
+_bmad-output/
 .kilocode/
+
+#readme
+project-context.md
