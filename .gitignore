@@ -66,16 +66,8 @@ logs/
 _bmad/
 
 # _bmad-output/ 目录管理
-# 忽略 _bmad-output/ 目录中的所有内容
+# 策略：完全忽略 _bmad-output/ 目录内容
+# 原因：项目内部文档，不需要版本控制
 _bmad-output/*
-# 例外：追踪目录结构
-!_bmad-output/**/
-# 例外：追踪所有 .html 文件
-!_bmad-output/**/*.html
-# 特别忽略 planning-artifacts/ 中的所有 .md 文件
-_bmad-output/planning-artifacts/*.md
 
 .kilocode/
-
-#readme
-project-context.md

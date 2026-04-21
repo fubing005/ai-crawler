@@ -1,7 +1,5 @@
 # Ignore all files
 *
-# But track .html and .md files
+# But track .html
 !*.html
 !**/*.html
-!*.md
-!**/*.md
