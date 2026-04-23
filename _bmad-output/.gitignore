@@ -1,5 +1,0 @@
-# Ignore all files
-*
-# But track .html
-!*.html
-!**/*.html

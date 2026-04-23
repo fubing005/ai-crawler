@@ -68,6 +68,7 @@ _bmad/
 # _bmad-output/ 目录管理
 # 策略：完全忽略 _bmad-output/ 目录内容
 # 原因：项目内部文档，不需要版本控制
-_bmad-output/*
+# _bmad-output/*
 
-.kilocode/
+.claude/
+docs/

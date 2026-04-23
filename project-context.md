@@ -2,9 +2,14 @@
 project_name: 'vscode_bmad_method_test'
 user_name: 'Shalabing'
 date: '2026-04-21'
-lastUpdated: '2026-04-21 - 升级 Playwright 至 v1.51.0'
-sections_completed: ['technology_stack', 'implementation_rules']
+lastUpdated: '2026-04-23 - 添加使用指南'
+sections_completed:
+  ['technology_stack', 'language_rules', 'framework_rules', 'testing_rules',
+   'quality_rules', 'workflow_rules', 'anti_patterns', 'usage_guide']
 existing_patterns_found: 8
+status: 'complete'
+rule_count: 65
+optimized_for_llm: true
 ---
 
 # Project Context for AI Agents
@@ -249,5 +254,26 @@ src/backend/
 
 ---
 
-**最后更新：** 2026-04-21
-**文档版本：** 1.0.0
+---
+
+**最后更新：** 2026-04-23
+**文档版本：** 2.0.0
+**状态：** 已完成并优化
+
+---
+
+## 使用指南
+
+**对于 AI 代理：**
+
+- 实现代码前务必阅读此文件
+- 严格遵循所有规则
+- 有疑问时，选择更严格的选项
+- 新模式出现时更新此文件
+
+**对于开发者：**
+
+- 保持文件精简，专注于代理需求
+- 技术栈变更时更新
+- 每季度审查过时规则
+- 移除随时间变得明显的规则
