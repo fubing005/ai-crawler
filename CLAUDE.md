@@ -2,72 +2,206 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project Status
+## 开发命令
 
-**Phase 4 - Implementation Ready**: All planning documents complete. Project is an AI-driven universal crawler framework (AI Crawler Distillate) using Python + FastAPI backend, Vue.js frontend, with local PostgreSQL storage and Playwright browser automation.
+```bash
+# 安装依赖
+pip install -r requirements.txt
+npm install
 
-## BMad Workflow System
+# 启动开发服务器
+python -m uvicorn backend.app.main:app --reload  # 后端 (FastAPI)
+npm run dev                                          # 前端 (Vue.js)
+npm run dev:electron                                 # Electron 开发模式
 
-This repository uses the **BMad Method** for product development. Workflows are organized in `.claude/skills/` with specific skills for each phase:
+# 测试
+pytest                                                   # 单元测试
+pytest tests/unit/test_example.py::test_name        # 单个测试
+pytest -k "test_keyword"                               # 过滤测试
+npm run test:e2e                                        # Playwright E2E 测试
+npx playwright test                                     # 直接运行 Playwright
+npx playwright test tests/e2e/test_file.spec.ts        # 单个 E2E 测试文件
 
-### Phase Structure
-1. **1-Analysis** (Brainstorming, Research, Product Brief)
-2. **2-Planning** (PRD, UX Design)
-3. **3-Solutioning** (Architecture, Epics/Stories)
-4. **4-Implementation** (Sprint Planning, Story Development, Code Review)
+# 数据库
+alembic revision --autogenerate -m "description"      # 生成迁移
+alembic upgrade head                                    # 应用所有迁移
+alembic downgrade -1                                    # 回滚一个迁移
 
-### Key Skills
+# Celery
+celery -A backend.app.tasks.celery_app worker --loglevel=info  # 启动 Celery worker
+celery -A backend.app.tasks.celery_app beat --loglevel=info     # 启动 Celery beat
 
-| Skill | Phase | Purpose |
-|--------|--------|----------|
-| `bmad-create-prd` | Planning | Create Product Requirements Document |
-| `bmad-create-architecture` | Solutioning | Document technical decisions (ADR format) |
-| `bmad-create-epics-and-stories` | Solutioning | Break requirements into epics and stories |
-| `bmad-sprint-planning` | Implementation | Generate sprint plans for story execution |
-| `bmad-dev-story` | Implementation | Execute story implementation |
-| `bmad-code-review` | Implementation | Review code adversarially |
-| `bmad-help` | Anytime | Get workflow guidance |
+# Docker
+docker-compose up -d                                     # 启动所有服务
+docker-compose down                                     # 停止所有服务
+docker-compose up -d db redis                           # 仅启动 DB 和 Redis
+```
 
-### Workflow Configuration
+## 架构概览
 
-- BMad config: `_bmad/bmm/config.yaml` and `_bmad/core/config.yaml`
-- Output location: `_bmad-output/planning-artifacts/` (planning), `_bmad-output/implementation-artifacts/` (implementation)
-- Communication language: Chinese
+### 核心架构
 
-## Architecture Decisions (From Planning Phase)
+```
+Frontend (Vue.js + Electron)
+    ↓ HTTP/WebSocket
+FastAPI Backend (async)
+    ↓ Task Queue
+Celery Workers
+    ↓ Browser Pool
+Playwright (v1.51.0 Worker Pool)
+    → PostgreSQL
+```
 
-Critical ADRs documented in `_bmad-output/planning-artifacts/architecture.md`:
+### 关键架构决策
 
-- **ADR-001**: Local deployment architecture (data never leaves user's machine)
-- **ADR-003**: Playwright Python v1.51.0 for browser automation (Worker Pool pattern)
-- **ADR-011**: Multi-provider AI model support with unified abstraction layer
-- **ADR-012**: Strategy Pattern for managing AI providers
-- **ADR-013**: Automatic fallback (3 second) between AI providers
+**Playwright Worker Pool 模式：**
+- 浏览器实例在 Celery worker 启动时初始化（而非每个任务）
+- 连接池：10-20 个并发实例（可配置）
+- 每个实例：100-200MB 内存
+- 任务从池中获取连接，完成后返回
+- **必需**：任务完成后显式调用 `await browser.close()` 以防止内存泄漏
+- **必需**：定期清理未使用的实例
 
-## Project Context for Implementation
+**三级视图策略：**
+- 简洁视图（新手）：仅核心功能（URL 输入、结果）
+- 仪表板视图（数据工程师）：实时进度、任务管理、数据导出
+- 专业视图（开发者）：CLI 集成、API 调试、高级配置
 
-AI agents implementing code must read `project-context.md` (65 critical rules, 8 sections) before writing any code. Key constraints:
+**AI 模型提供商抽象：**
+- 统一抽象层支持本地（Ollama）和云端（OpenAI、Anthropic 等）
+- 自动回退：主模型故障时 3 秒超时
+- 每个提供商的成本跟踪和预算控制
 
-- **Playwright**: Must use v1.51.0, Worker Pool mode, 100-200MB per browser instance
-- **AI Accuracy**: MVP 70-80%, Post-MVP 90-95%
-- **Performance**: Page analysis < 8 seconds (95th percentile), 100 concurrent users
-- **Compliance**: Chinese network security laws, GDPR, CCPA
+**WebSocket 实时通信：**
+- 端点：`/ws/progress/{task_id}`
+- 事件：三级视图状态同步的进度更新
+- 重连策略：指数退避以避免连接风暴
 
-## Epic Structure
+### 数据流
 
-15 Epics, 87 Stories covering 131 FR (Functional Requirements) and 87 NFR (Non-Functional Requirements). See `_bmad-output/planning-artifacts/epics.md` for complete breakdown.
+1. 用户在 Vue.js 中输入 URL → FastAPI 端点
+2. 创建 Celery 任务 → 任务在 Redis 中排队
+3. Celery worker 从池中获取 Playwright 浏览器
+4. 浏览器加载页面 → AI 模型分析结构
+5. 结果存储在 PostgreSQL → WebSocket 推送到前端
+6. 用户导出数据（JSON/CSV/Excel）
 
-P0 Epics (MVP):
-- Epic 1: Quick Start & Deployment
-- Epic 2: AI Page Analysis & Data Extraction
-- Epic 3: Crawler Task Management & Scheduling
-- Epic 4: User Interface & Interaction
-- Epic 5: Data Management & Export
-- Epic 6: Security & Compliance
-- Epic 7: AI Model Integration
+### 技术约束
 
-## BMad Skill Usage
+- **Playwright 版本**：固定在 v1.51.0（未经测试 Worker Pool 模式前不要升级）
+- **Python**：需要 3.10+（async/await 改进）
+- **FastAPI**：所有路由必须是 `async def`
+- **SQLAlchemy**：使用 2.0 语法（`select()` 而非已废弃的 `query()`）
+- **Pydantic**：仅 V2（使用 `@dataclass` 装饰器定义模型）
 
-When a user invokes a BMad skill (e.g., `/bmad-dev-story`), the skill file contains workflow instructions and checkpoints. Always follow the step-by-step workflow defined in the skill's `workflow.md` or `steps/` directory.
+## 代码约定
 
-Skills may invoke agents (Architect, Developer, PM, UX Designer) - these are orchestrated subagents with specific domains of expertise.
+### 命名
+
+- **Python**：文件、函数、变量使用 `snake_case`；类使用 `PascalCase`
+- **Vue.js**：组件使用 `PascalCase`（`UserProfile.vue`），变量使用 `camelCase`，文件名使用 `kebab-case`
+- **数据库**：表名使用 `snake_case`（如 `data_sources`），主键带 `_id` 后缀
+- **API 端点**：`/api/v1/{resource_plural}`（如 `/api/v1/data-sources`）
+
+### API 响应格式
+
+**成功：**
+```json
+{ "data": { ... }, "message": "Success" }
+```
+
+**错误：**
+```json
+{ "error": { "code": "VALIDATION_ERROR", "message": "Invalid input" } }
+```
+
+### SQLAlchemy 2.0 模式
+
+```python
+# 正确（2.0 语法）
+stmt = select(User).where(User.id == user_id)
+
+# 错误（已废弃语法）
+session.query(User).filter_by(id=user_id)
+
+# 异步会话（FastAPI 必需）
+async def get_user(db: AsyncSession):
+    result = await db.execute(select(User).where(User.id == user_id))
+    return result.scalar_one_or_none()
+```
+
+### Pydantic V2 模式
+
+```python
+from pydantic import BaseModel, Field
+
+class UserResponse(BaseModel):
+    id: int
+    name: str = Field(..., min_length=1)
+    created_at: datetime
+
+# V2: 使用 model_validate 而非 parse_obj
+UserResponse.model_validate(data_dict)
+```
+
+## 项目结构要点
+
+```
+backend/
+├── app/
+│   ├── api/           # FastAPI 路由（按资源组织）
+│   ├── models/        # SQLAlchemy 模型（使用 2.0 语法）
+│   ├── schemas/       # Pydantic V2 schemas
+│   ├── services/      # 业务逻辑（模型中不访问数据库）
+│   ├── tasks/         # Celery 任务（必须从池使用 Playwright）
+│   └── core/          # 配置、依赖项
+├── alembic/           # 数据库迁移（版本化）
+
+frontend/
+├── src/
+│   ├── components/    # Vue 组件（按功能组织）
+│   ├── composables/   # Composition API hooks
+│   ├── stores/         # Pinia stores（每个功能模块一个）
+│   ├── api/            # API 客户端（axios 拦截器）
+│   └── utils/          # 工具函数
+└── electron/          # Electron 主进程
+
+tests/
+├── playwright.config.ts
+└── e2e/               # Playwright E2E 测试
+```
+
+## 安全注意事项
+
+- **仅本地部署**：数据从不上传到云端（GDPR/CCPA 合规）
+- **API 密钥**：存储在系统密钥环中（Windows DPAPI、macOS Keychain、Linux Secret Service）
+- **加密**：静态数据 AES-256，传输 TLS 1.3
+- **审计日志**：保留 90 天，包括用户 ID、操作类型、时间戳、IP、受影响的数据
+
+## 性能约束
+
+- 页面分析：< 8 秒（95th percentile）
+- API 响应：< 200ms（95th percentile）
+- WebSocket 送达：< 10 秒（95th percentile）
+- 数据库查询：< 10 秒（95th percentile，100 万条记录）
+- 加密/解密：< 100ms/1MB
+
+## 规划文档位置
+
+所有规划文档位于 `_bmad-output/planning-artifacts/`：
+- `prd.md` - 产品需求文档
+- `architecture.md` - 架构设计（包含 16 个 ADR）
+- `epics.md` - Epic 分解（15 个 epics，87 个 stories）
+- `ux-design-specification.md` - UX 设计规范
+- `implementation-readiness-report-2026-05-01.md` - 实施就绪评估
+
+## 项目上下文
+
+AI 代理实施上下文位于 `_bmad-output/project-context.md`，包含：
+- 精确的技术栈版本
+- 15 个关键实施规则
+- 框架特定模式和约定
+- 测试和质量指南
+- 工作流和反模式规则
+
+在实施任何代码前，AI 代理应阅读此文件以确保与项目标准一致。

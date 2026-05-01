@@ -1,381 +1,402 @@
 # AI 驱动的通用爬虫框架
 
-> **愿景：** 让任何人都能轻松获取所需数据，释放数据的无限价值
+> 让数据采集变得像使用搜索引擎一样简单
 
-## 项目简介
+## 项目概述
 
-AI 驱动的通用爬虫框架通过人工智能自动学习网站结构，彻底改变传统爬虫的开发和维护方式。与需要手动编写选择器的传统爬虫工具（Scrapy、Puppeteer、BeautifulSoup）不同，我们的产品利用 AI 大模型在网页理解方面的突破，让开发者只需提供目标网址，AI 就能自动识别页面结构、提取数据，**零代码体验**，让数据采集前所未有的简单和高效。
+AI 驱动的通用爬虫框架是一个革命性的数据采集工具，通过人工智能自动学习网站结构，彻底改变了传统爬虫的开发和维护方式。
 
-### 核心价值
+### 核心价值主张
 
-- ✨ **零代码体验**：无需编写任何代码，只需自然提供网址
-- 🤖 **AI 驱动**：利用大语言模型理解网页结构和内容
-- 🔒 **本地部署**：数据完全本地化，保护隐私和合规性
-- 🌐 **通用性**：适用于各种网站和数据类型
-- 🚀 **易用性**：像使用搜索引擎一样简单
+- **零代码体验** - 用户只需输入网址，AI 自动识别页面结构、提取数据
+- **智能自适应** - 网站结构变化时自动适应，无需重新编写代码
+- **多平台支持** - Windows、macOS、Linux 桌面应用
+- **本地部署** - 数据存储在本地 PostgreSQL，完全掌控数据安全
+- **三级界面** - 简洁视图（新手）、仪表板视图（数据工程师）、专业视图（开发者）
 
-## 项目状态
+### 目标用户
 
-当前项目处于 **实现准备就绪** 状态。所有规划文档已完成，所有实现就绪问题已解决，准备进入 Phase 4 开发阶段。
+- **开发者** - 厌倦重复编写选择器，需要快速集成到现有项目中
+- **数据工程师** - 需要高质量、结构化数据源，关注数据质量和调度
+- **数据分析师/市场研究人员** - 完全非技术背景，依赖技术团队但资源有限
 
-### 已完成工作
+## 主要功能
 
-- ✅ **产品需求文档（PRD）** - 完整的功能和非功能需求定义
-- ✅ **架构设计文档** - 完整的技术架构和关键决策
-- ✅ **Epic 和 Story 分解** - 15 个 Epic，87 个 Story，100% 需求覆盖
-- ✅ **UX 设计规范** - 完整的用户体验设计指南
-- ✅ **实现就绪评估** - 所有 6 个关键问题已解决
-- ✅ **项目上下文** - AI 优化的实现指南
+### 核心功能
+
+- 🤖 **AI 页面分析** - 自动识别页面结构和数据字段
+- 📊 **数据提取** - 支持 JSON、CSV、Excel 格式导出
+- 🗂️ **任务管理** - 单网址/批量任务、定时调度、暂停/恢复
+- 🛡️ **反爬虫机制** - 请求频率控制、User-Agent 轮换、IP 代理池
+- 🔐 **安全与合规** - 本地存储、数据加密、GDPR/CCPA 合规
+- 🤝 **社区与协作** - 模板市场、知识共享、用户互动
+- 📈 **监控与性能** - 实时仪表板、资源监控、告警通知
+
+### 系统集成
+
+- 🚀 **REST API** - OpenAPI 规范、完整文档
+- 🐍 **Python SDK** - Jupyter Notebook 集成
+- 🔄 **Airflow Operator** - 任务调度自动化
+- 📤 **Webhooks** - 事件通知
+- 💾 **数据仓库集成** - Snowflake、BigQuery、Redshift
+- 🌊 **实时数据流** - Kafka、Kinesis 集成
+- 📊 **Tableau 集成** - 直接导入数据进行分析
+
+### 开发者工具
+
+- 💻 **CLI 接口** - 高级操作和脚本自动化
+- 🔧 **API 调试面板** - 交互式 API 测试
+- 📝 **代码导出** - 生成可重用的爬虫配置代码
 
 ## 技术栈
 
 ### 后端
-- **Python** 3.10+
-- **FastAPI** 0.100+ - 现代高性能 Web 框架
-- **SQLAlchemy** 2.0+ - ORM 数据库操作
-- **PostgreSQL** 15.x - 数据持久化
-- **Redis** 7.x - 任务队列和缓存
-- **Celery** 5.3+ - 异步任务处理
-- **httpx** - 异步 HTTP 客户端
-- **BeautifulSoup4 / lxml** - HTML 解析
-- **Playwright Python v1.51.0** - 动态内容处理
+
+```
+Python 3.10+
+├── FastAPI 0.100+        # Web 框架
+├── SQLAlchemy 2.0+         # ORM
+├── Pydantic 2.0+           # 数据验证
+├── Celery 5.3+             # 异步任务队列
+├── Redis 7.x                # 缓存和消息队列
+└── cryptography             # 数据加密
+```
 
 ### 前端
-- **Vue.js** 3.x - 渐进式 JavaScript 框架
-- **TypeScript** - 类型安全的 JavaScript
-- **Vite** 5.x - 下一代前端构建工具
-- **Ant Design Vue** - 企业级 UI 组件库
-- **Pinia** - Vue.js 状态管理
-
-### AI 集成
-- 支持本地模型：Ollama
-- 支持云端模型：OpenAI、Anthropic、Qwen、Doubao、GLM、Google Gemini
-- 模型切换和回退机制
-- 目标准确率：MVP 70-80%，Post-MVP 90-95%
-
-## 项目文档
-
-### 项目上下文
-
-[`project-context.md`](project-context.md) - AI 优化的项目上下文
-- ✅ 包含 65 条关键实施规则
-- ✅ 涵盖 8 个核心部分：技术栈、语言规则、框架规则、测试规则、质量规则、工作流规则、反模式、使用指南
-- ✅ 已针对 LLM 上下文效率优化
-- ✅ 包含使用指南供 AI 代理和开发者参考
-- **最后更新：** 2026-04-23
-
-### 规划文档
-
-所有规划文档位于 `_bmad-output/planning-artifacts/` 目录：
-
-| 文档 | 描述 | 状态 |
-|------|------|------|
-| [`prd.md`](_bmad-output/planning-artifacts/prd.md) | 产品需求文档（PRD）- 131 个功能需求，87 个非功能需求 | ✅ 完成 |
-| [`architecture.md`](_bmad-output/planning-artifacts/architecture.md) | 架构设计文档 - 技术栈、架构模式、关键决策 | ✅ 完成 |
-| [`epics.md`](_bmad-output/planning-artifacts/epics.md) | Epic 和 Story 分解 - 15 Epic，87 Story，100% 需求覆盖 | ✅ 完成 |
-| [`ux-design-specification.md`](_bmad-output/planning-artifacts/ux-design-specification.md) | UX 设计规范 - 用户体验设计指南 | ✅ 完成 |
-| [`implementation-readiness-report-2026-04-21.md`](_bmad-output/planning-artifacts/implementation-readiness-report-2026-04-21.md) | 实现就绪评估报告 | ✅ 完成 |
-
-### 实现文档
-
-| 文档 | 描述 | 状态 |
-|------|------|------|
-| [`project-context.md`](project-context.md) | AI 优化的项目上下文 - 65 条关键规则，8 个实现部分 | ✅ 已完成并优化 |
-
-## 功能特性
-
-### 核心功能（MVP）
-
-- 🤖 **AI 页面结构学习和数据提取**
-  - AI 自动分析页面结构，识别数据字段
-  - 支持多种网站类型（电商、新闻门户、博客、企业官网、视频网站）
-  - 数据准确率目标：MVP 70-80%，Post-MVP 优化至 90-95%（分阶段实现）
-  - 人工修正机制：用户可手动调整 AI 识别结果
-
-- 🛡️ **基础反爬虫机制**
-  - 请求频率控制
-  - User-Agent 轮换
-  - 随机延迟
-  - IP 轮换和代理池
-  - 验证码自动识别
-
-- 💻 **简单易用的 Web 界面**
-  - 零代码体验：渐进式披露策略
-  - 智能默认值：基于网址自动识别网站类型
-  - 自然语言交互：支持自然
-  - 可视化配置：拖拽、勾选框、滑块等直观操作
-
-- 📊 **数据导出功能**
-  - 支持 JSON、CSV、Excel 等多种格式
-  - 方便集成到现有数据处理管道
-
-- 💾 **本地部署和 PostgreSQL 数据库存储**
-  - 所有数据存储在本地
-  - 满足数据隐私法规要求
-
-### Post-MVP 功能
-
-- 🔍 **复杂的数据清洗和转换**
-- 📈 **实时监控和告警系统**
-- 🔐 **高级反爬虫策略**
-- 🌐 **社区驱动
-  - 用户分享爬取模板和经验
-  - 形成社区驱动的生态系统
-  - 网络效应：用得越多，AI 越智能
-
-## 架构概览
-
-### 分层架构
 
 ```
-┌─────────────────────────────────────┐
-│     Web UI Layer (Vue.js 3)       │
-│  ┌──────────────┐  ┌────────────┐ │
-│  │  User View   │  │ Admin View │ │
-│  └──────────────┘  └────────────┘ │
-└─────────────────────────────────────┘
-            ↓ REST API
-┌─────────────────────────────────────┐
-│   Application Layer (FastAPI)       │
-│  ┌──────────────┐  ┌────────────┐ │
-│  │  API Routes   │  │ Business   │  │
-│  │  │              │  │ Logic      │  │
-│  └──────────────┘  └────────────┘ │
-└─────────────────────────────────────┘
-            ↓ Service Calls
-┌─────────────────────────────────────┐
-│     AI/ML Layer (Celery Tasks)      │
-│  ┌──────────────┐  ┌────────────┐ │
-│  │  Crawler     │  │ AI Models  │  │
-│  │  Service     │  │ Service    │  │
-│  └──────────────┘  └────────────┘ │
-└─────────────────────────────────────┘
-            ↓ Data Access
-┌─────────────────────────────────────┐
-│  Infrastructure Layer                │
-│  ┌──────────┐  ┌──────────────┐   │
-│  │PostgreSQL│  │    Redis     │   │
-│  └──────────┘  └──────────────┘   │
-└─────────────────────────────────────┘
+Vue.js 3.4+ Composition API  # 响应式框架
+├── Naive UI               # 设计系统组件
+├── Pinia                   # 状态管理
+├── Electron                # 桌面框架
+└── IndexedDB              # 离线存储
 ```
 
-### 目录结构
+### 浏览器自动化
 
 ```
-vscode_bmad_method_test/
-├── src/
-│   ├── backend/
-│   │   ├── api/              # FastAPI 路由和端点
-│   │   ├── core/              # 核心配置和工具
-│   │   ├── models/            # SQLAlchemy ORM 模型
-│   │   ├── services/          # 业务逻辑层
-│   │   ├── tasks/             # Celery 异步任务
-│   │   └── middleware/         # 中间件
-│   ├── frontend/
-│   │   ├── components/       # Vue.js 组件
-│   │   ├── pages/            # 页面
-│   │   ├── services/         # API 客户端
-│   │   ├── store/            # Pinia 状态管理
-│   │   └── styles/           # 样式系统
-│   ├── tests/                  # 测试
-│   ├── docs/                   # 文档
-│   └── scripts/                # 脚本工具
-├── _bmad-output/
-│   └── planning-artifacts/     # 规划文档
-├── data/                       # 数据存储
-├── migrations/                 # 数据库迁移
-├── docker-compose.yml
-├── Dockerfile
-├── requirements.txt
-└── README.md
+Playwright v1.51.0          # 跨浏览器自动化
+└── Worker Pool 模式         # 10-20 并发实例
 ```
 
-## Epic 总览
+### 数据库
 
-项目包含 15 个 Epic，覆盖所有功能需求：
+```
+PostgreSQL 15.x              # 本地存储
+└── Alembic                 # 数据库迁移
+```
 
-| Epic | 标题 | Story 数 | 优先级 |
-|------|------|----------|--------|
-| Epic 1 | 快速启动和部署系统 | 8 | P0 |
-| Epic 2 | AI 页面结构学习和数据提取 | 8 | P0 |
-| Epic 3 | 爬取任务调度和管理 | 8 | P0 |
-| Epic 4 | 用户界面和交互 | 8 | P0 |
-| Epic 5 | 数据管理和导出 | 8 | P0 |
-| Epic 6 | 安全和合规 | 6 | P0 |
-| Epic 7 | AI 模型集成 | 9 | P0 |
-| Epic 8 | 系统集成 | 5 | P1 |
-| Epic 9 | 跨平台兼容性和打包 | 5 | P1 |
-| Epic 10 | 监控和性能优化 | 5 | P1 |
-| Epic 11 | 文档和开发者指南 | 5 | P1 |
-| Epic 12 | 社区和协作 | 5 | P2 |
-| Epic 13 | 响应速度和交互体验优化 | 4 | P1 |
-| Epic 14 | 可扩展性和云部署 | 4 | P1 |
-| Epic 15 | 任务管理和设置 | 10 | P0 |
+### 部署
 
-**总计：** 87 个 Story，131 个功能需求（FR），87 个非功能需求（NFR）
+```
+Docker                      # 容器化
+Docker Compose              # 多服务编排
+Electron 打包              # Windows (.exe, .msi), macOS (.dmg, .pkg), Linux (.deb, .rpm)
+```
 
-## 成功标准
+## 快速开始
 
-### 用户成功
-- 🎯 **爬取成功率**：70-80% 的常见网站类型首次爬取成功
-  - 数据准确率：MVP 70-80%，Post-MVP 优化至 90-95%（分阶段实现）
-  - 人工修正机制：提供审核和修正功能
-  - ⚡ **顿悟时刻**：第一次成功爬取新网站，意识到"这太简单了！"
-- 🔄 **AI 自适应能力**：
-  - 网站结构变化后，AI 在 48-72 小时内自动适应
-  - 90% 的情况下自动适应，只有 10% 需要人工干预
-  - AI 能够从用户调整中学习
-
-### 业务成功
-- 👥 **用户增长**：
-  - 3 个月目标：1000 用户
-  - 12 个月目标：10000 用户
-- 😊 **用户满意度**：NPS 达到 50+
-- 📊 **用户采用率**：80% 的注册用户在第一周内成功爬取至少一个网站
-
-### 技术成功
-- 🛠️ **维护成本降低**：与传统爬虫相比，维护时间减少 70% 以上
-
-## 性能目标
-
-- ⏱️ **API 响应时间**：< 200ms（95th 百分位）
-- 📄 **页面分析和数据提取**：< 8 秒（95th 百分位）
-- 👥 **支持并发用户**：100
-- 📝 **支持并发任务**：1,000
-- 🖥️ **首屏加载时间**：< 3 秒
-- ⚡ **交互响应时间**：< 500ms
-
-## 合规性和安全
-
-
-
-### 数据隐私
-- 🔒 **本地部署**：所有数据存储在本地 PostgreSQL 数据库中，不会上传到云端
-- 🔐 **数据加密**：敏感数据在存储和传输过程中进行加密（AES-256）
-- 📋 **访问控制**：实施严格的访问控制
-- 📝 **审计日志**：记录所有数据访问和操作
-
-### 合规性
-- 🌍 **GDPR**（欧盟通用数据保护条例）
-- 🇺🇸 **CCPA**（加州消费者隐私法案）
-- 🇨🇳 **中国网络安全法和个人信息保护法**
-- 🤖 **遵守 robots.txt**：严格遵守目标网站的服务条款和 robots.txt 规范
-
-## 部署方式
-
-### 支持的部署方式
-- 💻 **本地安装**：Windows 10/11、macOS 10.15+、Linux（Ubuntu 20.04+、CentOS 7+、Debian 10+）
-- 🐳 **Docker**：容器化部署
-- 🐋 **Docker Compose**：多容器编排
-- ☸️ **Kubernetes**：云原生部署
-- 🔄 **CI/CD 集成**：支持自动化部署和更新
-
-### 快速开始
+### 安装
 
 ```bash
 # 克隆项目
-git clone https://github.com/fubing005/ai-agent-spider.git
-cd ai-agent-spider
+git clone <repository-url>
+cd vscode_bmad_method_test
 
-# 使用 Docker Compose 启动
+# 安装依赖
+pip install -r requirements.txt
+
+# 配置环境
+cp .env.example .env
+# 编辑 .env 文件配置数据库连接和 AI 模型
+
+# 启动服务
+# 开发环境
+python -m uvicorn backend.app.main:app --reload
+# 启动前端
+npm run dev
+
+# 生产环境
 docker-compose up -d
+```
 
-# 访问 Web 界面
-open http://localhost:8000
+### 运行第一个爬取任务
+
+```bash
+# 1. 启动应用
+npm run dev
+
+# 2. 在简洁视图中输入网址
+https://example.com/products
+
+# 3. 查看AI 分析结果
+- 页面类型：商品列表
+- 推荐字段：商品名称、价格、库存、评分
+- 置信度：85%
+
+# 4. 启动数据提取
+# 几秒钟后获得结构化数据
+
+# 5. 导出数据
+# 支持 JSON、CSV、Excel 格式
+```
+
+## 项目结构
+
+```
+vscode_bmad_method_test/
+├── _bmad/                    # BMad 配置和输出
+│   ├── bmm/              # 模块配置
+│   └── _output/          # 规划产物
+│       ├── planning-artifacts/     # PRD、架构、Epics、UX
+│       └── implementation-artifacts/  # 实施产物
+├── _bmad-output/              # 项目输出目录
+│   ├── planning-artifacts/     # 规划文档
+│   │   ├── prd.md
+│   │   ├── architecture.md
+│   │   ├── epics.md
+│   │   ├── ux-design-specification.md
+│   │   ├── implementation-readiness-report-2026-05-01.md
+│   │   ├── epic-01-first-time-onboarding.md
+│   │   ├── epic-02-ai-page-analysis.md
+│   │   ├── epic-03-crawl-task-management.md
+│   │   ├── epic-04-user-interface-interaction.md
+│   │   ├── epic-05-data-management-export.md
+│   │   ├── epic-06-offline-mode-persistence.md
+│   │   ├── epic-07-undo-redo-recovery.md
+│   │   ├── epic-08-ai-model-integration.md
+│   │   ├── epic-09-anti-crawling-mechanisms.md
+│   │   ├── epic-10-security-compliance.md
+│   │   ├── epic-11-desktop-deployment-system-integration.md
+│   │   ├── epic-12-monitoring-performance-optimization.md
+│   │   ├── epic-13-community-collaboration.md
+│   │   ├── epic-14-observability-logging.md
+│   │   ├── epic-15-scalability-integration.md
+│   │   ├── design-direction-overview.md
+│   │   └── wireframe-document.md
+│   └── project-context.md    # AI 代理上下文
+├── backend/                   # 后端服务
+│   ├── app/                # FastAPI 应用
+│   ├── api/                # API 路由
+│   ├── models/             # SQLAlchemy 模型
+│   ├── schemas/             # Pydantic schemas
+│   ├── services/            # 业务逻辑
+│   ├── tasks/               # Celery 任务
+│   └── core/               # 配置、工具
+├── frontend/                 # 前端应用
+│   ├── src/
+│   │   ├── components/     # Vue 组件
+│   │   ├── composables/    # 组合式 API
+│   │   ├── stores/          # Pinia stores
+│   │   ├── api/            # API 客户端
+│   │   └── utils/          # 工具函数
+│   ├── electron/            # Electron 主进程
+│   └── tests/              # 测试
+├── tests/                    # Playwright 端到端测试
+│   ├── playwright.config.ts
+│   └── e2e/                # 端到端测试
+└── docs/                     # 项目文档
 ```
 
 ## 开发指南
 
-### 前置要求
-- Python 3.10+
-- Node.js 18+
-- PostgreSQL 15.x
-- Redis 7.x
-
-### 安装依赖
-
-```bash
-# 后端依赖
-pip install -r requirements.txt
-
-# 前端依赖
-cd src/frontend
-npm install
-```
-
-### 运行开发服务器
-
-```bash
-# 后端（FastAPI）
-cd src/backend
-uvicorn main:app --reload
-
-# 前端（Vue.js + Vite）
-cd src/frontend
-npm run dev
-```
-
-### 运行测试
-
-```bash
-# 后端测试
-cd src/backend
-pytest --cov=.
-
-# 前端测试
-cd src/frontend
-npm run test
-```
-
 ### 代码规范
 
-- **Python**：遵循 PEP 8 规范，使用 Black 格式化
-- **TypeScript**：使用 ESLint + Prettier
-- **提交信息**：使用 Conventional Commits 规范
+参考 `project-context.md` 了解详细的编码规范：
 
-## 测试策略
+- **命名约定**
+  - Python: `snake_case` (函数、变量)
+  - Vue.js: `PascalCase` (组件), `camelCase` (变量)
+  - 文件名: `kebab-case`
 
-- **单元测试覆盖率**：> 80%
-- **测试框架**：
-  - 后端：pytest
-  - 前端：Vitest
-- **集成测试**：所有 Epic 必须有对应的测试
-- **E2E 测试**：关键用户旅程的端到端测试
+- **API 设计**
+  - REST 端点: `/api/v1/{resource_plural}`
+  - 统一错误响应格式
+  - 版本控制: `X-API-Version` header
+
+- **数据库**
+  - 表名: `snake_case`
+  - 主键: 使用 `_id` 后缀
+  - 外键: `{table}_id` 格式
+
+### 提交规范
+
+```bash
+# 功能分支
+git checkout -b feature/new-feature
+
+# 提交信息
+git commit -m "feat: add new feature
+
+Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>"
+
+# 推送到远程
+git push origin feature/new-feature
+```
+
+### 测试
+
+```bash
+# 运行所有测试
+pytest
+
+# 运行 Playwright 端到端测试
+npm run test:e2e
+```
+
+## 配置说明
+
+### 环境变量
+
+创建 `.env` 文件配置以下变量：
+
+```env
+# 数据库配置
+DATABASE_URL=postgresql://user:password@localhost:5432/ai_crawler
+
+# Redis 配置
+REDIS_URL=redis://localhost:6379/0
+
+# AI 模型配置
+OPENAI_API_KEY=sk-...
+ANTHROPIC_API_KEY=sk-...
+QWEN_API_KEY=sk-...
+
+# 应用配置
+APP_ENV=development
+LOG_LEVEL=INFO
+```
+
+### AI 模型提供商配置
+
+系统支持以下 AI 模型提供商：
+
+**本地模型:**
+- Ollama - 无需 API Key，需要本地安装
+
+**云端模型:**
+- OpenAI - 需要 API Key
+- Anthropic - 需要 API Key  
+- Qwen (通义千问) - 需要 API Key
+- Doubao (字节跳动) - 需要 API Key
+- GLM (智谱) - 需要 API Key
+- Google Gemini - 需要 API Key
+
+## 性能要求
+
+- 页面分析与提取: < 8 秒 (95th 百分位)
+- API 响应时间: < 200ms (95th 百分位)
+- 支持 100 并发用户
+- 支持 1,000 并发任务
+- 支持批量爬取: 最多 1,000 个 URL
+
+## 安全与合规
+
+- **数据存储**: 本地 PostgreSQL，不上传云端
+- **数据加密**: AES-256 (静态), TLS 1.3 (传输)
+- **合规标准**: 
+  - GDPR (欧盟通用数据保护条例)
+  - CCPA (加州消费者隐私法)
+  - 中国网络安全法
+  - 个人信息保护法
+
+## 项目状态
+
+- **已完成文档**：PRD、Architecture、UX Design、Epics & Stories（15 个 epics，87 个 stories）
+- **实施就绪评估**：✅ 已完成（2026-05-01）
+- **下一阶段**：Sprint Planning → Story Development
 
 ## 文档
 
-- ✅ [产品需求文档（PRD）](_bmad-output/planning-artifacts/prd.md) - 完整的功能和非功能需求
-- ✅ [架构设计文档](_bmad-output/planning-artifacts/architecture.md) - 技术架构和关键决策
-- ✅ [Epic 和 Story 分解](_bmad-output/planning-artifacts/epics.md) - 实现计划
-- ✅ [UX 设计规范](_bmad-output/planning-artifacts/ux-design-specification.md) - 用户体验设计
-- ✅ [项目上下文](project-context.md) - AI 优化的实现指南
+### 规划文档 (`_bmad-output/planning-artifacts/`)
 
-## 贡献指南
+**核心文档：**
+- `prd.md` - 产品需求文档
+- `architecture.md` - 架构设计文档（包含 16 个 ADR）
+- `epics.md` - Epic 分解和用户故事（15 个 epics，87 个 stories）
+- `ux-design-specification.md` - UX 设计规范
 
-欢迎贡献！请查看 [贡献指南](CONTRIBUTING.md) 了解详细信息。
+**Epic 分片文档：**
+- `epic-01-first-time-onboarding.md` - 首次使用引导
+- `epic-02-ai-page-analysis.md` - AI 页面分析
+- `epic-03-crawl-task-management.md` - 爬取任务管理
+- `epic-04-user-interface-interaction.md` - 用户界面交互
+- `epic-05-data-management-export.md` - 数据管理与导出
+- `epic-06-offline-mode-persistence.md` - 离线模式与持久化
+- `epic-07-undo-redo-recovery.md` - 撤销/重做与恢复
+- `epic-08-ai-model-integration.md` - AI 模型集成
+- `epic-09-anti-crawling-mechanisms.md` - 反爬虫机制
+- `epic-10-security-compliance.md` - 安全与合规
+- `epic-11-desktop-deployment-system-integration.md` - 桌面部署与系统集成
+- `epic-12-monitoring-performance-optimization.md` - 监控与性能优化
+- `epic-13-community-collaboration.md` - 社区与协作
+- `epic-14-observability-logging.md` - 可观测性与日志
+- `epic-15-scalability-integration.md` - 可扩展性与集成
 
-1. Fork 项目
-2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 开启 Pull Request
+**设计文档：**
+- `design-direction-overview.md` - 设计方向概览
+- `wireframe-document.md` - 线框图文档
+
+**其他文档：**
+- `product-brief-ai-crawler.md` - 产品简报
+
+### 实施报告 (`_bmad-output/planning-artifacts/`)
+
+- `implementation-readiness-report-2026-05-01.md` - 实施就绪评估报告
+
+### 项目上下文
+
+- `project-context.md` - AI 代理实施规则和约定（15 个关键规则）
 
 ## 许可证
 
-本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详细信息。
+本项目采用 MIT 许可证。
+
+## 贡献
+
+欢迎贡献！请参考以下指南：
+
+1. 遵循代码规范 (`project-context.md`)
+2. 为新功能创建分支
+3. 添加适当的测试
+4. 更新相关文档
+5. 提交 Pull Request 前确保测试通过
+
+## 常见问题
+
+### 首次使用
+
+1. 确保 Python 3.10+ 已安装
+2. 确保 PostgreSQL 15.x 已安装并运行
+3. 确保 Redis 7.x 已安装并运行
+4. 复制 `.env.example` 为 `.env` 并配置必要的环境变量
+
+### 端到端测试失败
+
+- 确保使用 `npx playwright install` 安装浏览器
+- 检查网络连接
+- 尝试使用不同的浏览器模式
+
+### AI 模型连接失败
+
+- 检查 API Key 是否正确
+- 验证 Base URL 是否可访问
+- 检查网络代理设置
 
 ## 联系方式
 
-- **项目作者**：Shalabing
-- **项目仓库**：https://github.com/fubing005/ai-agent-spider
-- **问题反馈**：https://github.com/fubing005/ai-agent-spider/issues
+项目作者：Shalabing
+项目仓库：https://github.com/fubing005/ai-crawler
+问题反馈：https://github.com/fubing005/ai-crawler/issues
 
-## 致谢
+## 路线图
 
-感谢所有为本项目做出贡献的开发者！
+```
+产品规划 → 架构设计 → UX 设计 → Epic 分解 → 实施就绪评估 → Sprint 规划 → Story 开发 → 测试 → 部署
+```
+
+**当前阶段**: 实施就绪评估完成，准备进入 Sprint 规划阶段
 
 ---
 
-**最后更新：** 2026-04-21  
-**项目状态：** 实现准备就绪（Phase 4 开发阶段）  
-**文档版本：** 1.0.0
+**最后更新**: 2026-05-01

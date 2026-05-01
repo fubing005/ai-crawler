@@ -1,13 +1,28 @@
 ---
 stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8, 9]
-inputDocuments: ["prd.md", "product-brief-ai-crawler.md", "product-brief-ai-crawler-distillate.md", "ux-design-specification.md", "ux-enhanced-core-experience.md", "ux-visual-foundation.md", "prd-validation-report.md"]
 workflowType: 'architecture'
 lastStep: 9
-status: 'enhanced'
-completedAt: '2026-04-22T05:57:00Z'
+status: 'complete'
+completedAt: '2026-04-28'
+inputDocuments:
+  - product-brief-ai-crawler.md
+  - product-brief-ai-crawler-distillate.md
+  - prd.md
+  - ux-design-specification.md
+  - research/technical-playwright-integration-research-2026-04-18.md
+workflowType: 'architecture'
 project_name: 'vscode_bmad_method_test'
 user_name: 'Shalabing'
-date: '2026-04-22'
+date: '2026-04-28'
+adrCount: 9
+enhancements:
+  - "添加 ADR-005: WebSocket 事件版本控制"
+  - "添加 ADR-006: 三级界面状态管理"
+  - "添加 ADR-007: 错误处理策略"
+  - "添加 ADR-008: 离线架构模式"
+  - "添加 ADR-009: 撤销/重做机制"
+  - "更新 Gap Analysis: 所有 Important Gaps 已解决"
+  - "更新 Requirements Coverage: 100% FR 覆盖（136 个 FR）"
 ---
 
 # Architecture Decision Document
@@ -16,3590 +31,1986 @@ _This document builds collaboratively through step-by-step discovery. Sections a
 
 ---
 
-## 初始化完成 ✅
+## Architecture Decision Records (ADRs)
 
-**项目信息：**
-- 项目名称：vscode_bmad_method_test（AI 驱动的通用爬虫框架）
-- 用户：Shalabing
-- 日期：2026-04-21
+本节记录架构设计决策，解释关键技术选择及其理由。
 
-**文档设置：**
-- 已创建：`_bmad-output/planning-artifacts/architecture.md`
-- 已初始化 frontmatter 和工作流状态
+### ADR-001: 选择 PostgreSQL 作为数据库
 
-**发现的输入文档：**
+**状态**: 已接受
 
-✅ **产品需求文档 (PRD)：**
-- `prd.md` - 完整的产品需求文档（1940行）
-  - 包含产品愿景、用户旅程、功能需求、非功能需求、架构决策记录
-  - 定义了130+个功能需求（FR1-FR113）和65+个非功能需求（NFR1-NFR65）
-  - 包含16个架构决策记录（ADR-001至ADR-016）
+**背景**:
+- PRD 要求本地部署满足 GDPR、CCPA、中国网络安全法等合规要求
+- 爬虫数据包含半结构化内容（网页 HTML、提取字段、元数据）
+- 需要支持按数据源组织存储
+- Python 生态首选数据库
 
-✅ **产品简报：**
-- `product-brief-ai-crawler.md` - 产品简报（105行）
-- `product-brief-ai-crawler-distillate.md` - 产品简报精简版（188行）
-  - 包含技术上下文、用户场景、竞争情报、范围信号
+**决策**: 使用 PostgreSQL 15.x 作为主数据库
 
-✅ **UX设计文档：**
-- `ux-design-specification.md` - UX设计规范（500+行已读取）
-  - 包含核心用户体验、设计原则、视觉基础
-- `ux-enhanced-core-experience.md` - 增强核心体验（447行）
-  - 包含用户分层、成功标准、新颖UX模式
-- `ux-visual-foundation.md` - 视觉基础设计（379行）
-  - 包含色彩系统、排版、间距布局、可访问性
+**理由**:
+1. **本地部署合规**: 支持本地安装和部署，满足数据不出境要求
+2. **JSON 数据类型**: 原生支持 `jsonb` 存储，适合网页半结构化数据
+3. **Full-Text 搜索**: 内置全文搜索功能，便于数据检索
+4. **事务完整性**: ACID 保证，确保爬取事务数据一致性
+5. **Python 生态**: `asyncpg`、`SQLAlchemy 2.0` 支持良好
+6. **开源免费**: 无商业许可成本
 
-✅ **验证报告：**
-- `prd-validation-report.md` - PRD验证报告
+**替代方案及拒绝理由**:
+- **SQLite**: 缺少并发写入支持，不适合多用户场景
+- **MySQL/MariaDB**: JSON 支持不如 PostgreSQL 完善
+- **MongoDB**: 事务支持较弱，ACID 保证不完善
 
-**已加载的关键信息：**
+**影响范围**:
+- Epic 3: 数据管理 & 导出
+- Epic 5: 数据导出
+- Epic 6: 安全与合规
+- 所有数据访问层（SQLAlchemy 模型）
 
-**产品核心特性：**
-- 零代码AI驱动的通用爬虫框架
-- 本地部署（Python应用）
-- 支持Windows、macOS、Linux
-- AI模型可在本地执行，但需要网络连接爬取目标网站
-- 数据存储在本地PostgreSQL数据库
-- 支持多种AI模型提供商（本地Ollama、云端OpenAI、Anthropic、Qwen等）
+**实施位置**:
+- 数据库连接配置: `backend/app/core/database.py`
+- 模型定义: `backend/app/api/v1/models/`
+- 迁移脚本: `backend/alembic/versions/`
 
-**关键技术决策（来自PRD ADR）：**
-- **ADR-001**: 本地部署架构
-- **ADR-002**: AI模型选择（预训练LLM微调）
-- **ADR-003**: 浏览器自动化框架（Playwright Python v1.51.0）
-- **ADR-004**: 数据存储组织（PostgreSQL）
-- **ADR-005**: 反爬虫策略（多层反爬）
-- **ADR-011**: 多提供商AI模型支持
-- **ADR-012**: 统一AI模型抽象层
-- **ADR-013**: 多提供商回退策略
-- **ADR-014**: 成本感知模型选择
-- **ADR-015**: 云端模型的数据隐私设计
-- **ADR-016**: 混合本地-云端架构
+### ADR-002: AI 提供商配置包含技术名称
 
-**性能和非功能需求：**
-- 页面分析和数据提取：8秒内完成（95th percentile）
-- 支持100个并发用户
-- 支持1000个并发爬取任务
-- API响应时间：200ms（95th percentile）
-- 99.9%正常运行时间
-- 数据准确率：MVP 70-80%，Post-MVP 90-95%
+**背景**:
+- PRD 要求支持 8 个 AI 提供商（Ollama、OpenAI、Anthropic 等）
+- 不同提供商有不同 API 格式和认证方式
+- 用户需要明确选择和使用特定模型
 
-**安全要求（中国法规专项）：**
-- 符合《中华人民共和国网络安全法》
-- 符合《中华人民共和国个人信息保护法》
-- 符合《中华人民共和国数据安全法》
-- 数据本地存储
-- 个人信息保护
-- 数据加密（AES-256）
-- 访问控制和审计日志
+**决策**: FRs 中明确列出所有 AI 提供商名称
 
-**准备就绪！**
+**理由**:
+- 这是**能力定义**而非实现细节泄露
+- 用户需要知道支持哪些具体提供商
+- 各提供商有不同的 API 配置要求（API Key、Base URL 等）
 
-所有必要的输入文档已加载和验证。PRD包含了完整的功能和非功能需求，以及关键的架构决策记录。UX设计文档提供了详细的用户界面和交互要求。
+**技术约束说明**:
+- FR12: `Users can add local model providers (Ollama)` - 明确本地提供商
+- FR13: `Users can add cloud model providers (OpenAI, Anthropic, Qwen, Doubao, GLM, Google Gemini)` - 明确云端提供商
+
+**影响范围**:
+- Epic 7: AI 模型集成
+- AI 提供商抽象层: `backend/app/services/ai_service.py`
+
+### ADR-003: 部署选项包含具体工具
+
+**背景**:
+- 用户需要灵活的部署方式
+- 不同用户有不同的基础设施偏好
+- MVP 阶段需要提供主流部署选项
+
+**决策**: FRs 中明确列出 Docker、Docker Compose、Kubernetes 部署选项
+
+**理由**:
+- 这是**部署能力**定义，允许用户选择合适的部署方式
+- 不同工具有不同的使用场景：
+  - Docker: 适合单机快速部署
+  - Docker Compose: 适合本地开发和小规模部署
+  - Kubernetes: 适合云原生和大规模部署
+
+**技术约束说明**:
+- FR70: `Users can deploy the application using Docker`
+- FR71: `Users can deploy the application using Docker Compose`
+- FR72: `Users can deploy the application using Kubernetes`
+
+**影响范围**:
+- Epic 8: 桌面部署 & 系统集成
+- 部署脚本和文档
+
+### ADR-004: 集成选项列出具体系统
+
+**背景**:
+- 数据工程师需要将爬取结果集成到现有数据处理管道
+- 不同组织使用不同的数据仓库和消息队列
+- 明确支持的工具范围有助于用户评估兼容性
+
+**决策**: FRs 中列出具体的数据仓库、流处理工具、可视化工具
+
+**理由**:
+- 这是**集成能力**定义，描述用户期望的集成目标
+- 用户需要知道支持哪些工具才能评估适用性
+- 这些是主流工具，代表技术类别而非强制选择
+
+**技术约束说明**:
+- FR78: `Users can load crawling data into data warehouses (Snowflake, BigQuery, Redshift)` - 数据仓库类别
+- FR79: `Users can integrate real-time data streams into Kafka or Kinesis` - 消息队列类别
+- FR82: `Users can import data directly into Tableau` - 可视化工具类别
+
+**影响范围**:
+- Epic 5: 数据管理 & 导出
+- 数据导出接口: `backend/app/api/v1/crawl_results.py`
+
+### ADR-005: WebSocket 事件版本控制
+
+**状态**: 已接受
+
+**背景**:
+- 实时进度同步依赖 WebSocket 事件
+- 事件格式可能随产品迭代而变更
+- 需要向后兼容性保证
+
+**决策**: 使用 Header 进行版本控制，MVP 使用 v1
+
+**理由**:
+- Header 版本控制避免 URL 破坏性变更
+- MVP 阶段保持简单，v1 足够使用
+- 客户端可检测版本不兼容
+
+**技术实现**:
+- Header 格式: `X-Event-Version: v1`
+- 破坏性变更: 升级到 v2，客户端需支持
+- 实施位置: `backend/app/api/v1/websocket/__init__.py`
+
+**影响范围**:
+- Epic 3: 任务调度
+- Epic 4: 实时更新
+
+### ADR-006: 三级界面状态管理
+
+**状态**: 已接受
+
+**背景**:
+- PRD 要求三级界面策略（简洁/仪表板/专业）
+- UX 设计规范要求满足所有用户类型：非技术用户、数据工程师、开发者
+- 不同视图需要不同的状态管理策略
+- 确保状态同步和一致性
+
+**决策**: 使用 Pinia stores 分离视图状态 + WebSocket 同步 + 用户偏好存储
+
+**理由**:
+- 简洁视图：最小化状态，本地存储，聚焦核心操作
+- 仪表板视图：实时进度，WebSocket 监听，任务管理
+- 专业视图：缓存 + WebSocket + IndexedDB，精确控制和批量操作
+- 用户偏好存储：记住用户选择的视图偏好
+
+**技术实现**:
+- **Pinia stores 按视图分离**: `useCrawlStore`, `useUiStore`, `useUserStore`, `useOfflineStore`
+- **WebSocket 事件统一分发到对应 stores**: 实时进度同步
+- **IndexedDB 用于专业视图离线缓存**: 支持离线浏览
+- **用户偏好存储**: LocalStorage 存储视图偏好
+- **视图切换组件**: ViewSwitcher 组件管理视图切换
+
+**三级视图策略**:
+
+**简洁视图（默认）**:
+- **设计基础**: 简洁聚焦式
+- **目标用户**: 非技术用户、首次用户
+- **状态管理**: 最小化状态，本地存储
+- **核心功能**: 聚焦核心操作，零代码体验
+- **信息密度**: 低密度，突出核心操作
+- **特点**: 
+  - 大搜索框居中，类似搜索引擎体验
+  - 提供 2-3 个示例网址供快速体验
+  - 收起式左侧栏，悬停展开
+  - 80% 用户在第一周内成功爬取至少一个网站
+
+**仪表板视图**:
+- **设计基础**: 卡片仪表板式
+- **目标用户**: 数据工程师、有经验用户
+- **状态管理**: 实时进度，WebSocket 监听
+- **核心功能**: 任务监控、数据预览、快速访问
+- **信息密度**: 中等密度，平衡信息和操作
+- **特点**:
+  - 实时状态和统计
+  - 查看所有运行和完成的任务
+  - 常用功能一键可达
+  - 数据可视化优先
+
+**专业视图（开发者模式）**:
+- **设计基础**: 紧凑专业式
+- **目标用户**: 开发者、高级用户
+- **状态管理**: 缓存 + WebSocket + IndexedDB
+- **核心功能**: 精确控制、批量操作、高级配置
+- **信息密度**: 高密度，最大化信息展示
+- **特点**:
+  - 一屏展示更多信息，效率优先
+  - 支持批量爬取和导出
+  - 工具栏快速访问功能
+  - 详细配置面板，所有选项可见
+
+**视图切换实现**:
+- **视图切换器**: ViewSwitcher 组件，支持在简洁、仪表板、专业视图之间切换
+- **用户偏好存储**: LocalStorage 存储用户选择的视图偏好
+- **状态同步**: WebSocket 事件统一分发到对应 stores
+- **无缝切换**: 视图切换时保持状态一致性
+
+**实施位置**:
+- 前端: `frontend/src/stores/crawl.js` (爬取状态管理)
+- 前端: `frontend/src/stores/ui.js` (UI 状态管理)
+- 前端: `frontend/src/stores/user.js` (用户状态管理)
+- 前端: `frontend/src/stores/offline.js` (离线状态管理)
+- 前端: `frontend/src/components/ViewSwitcher.vue` (视图切换器)
+- 前端: `frontend/src/views/SimpleView.vue` (简洁视图)
+- 前端: `frontend/src/views/DashboardView.vue` (仪表板视图)
+- 前端: `frontend/src/views/ProfessionalView.vue` (专业视图)
+
+**影响范围**:
+- Epic 4: 用户界面 & 交互
+- `frontend/src/stores/`
+- `frontend/src/views/`
+
+### ADR-007: 错误处理策略
+
+**状态**: 已接受
+
+**背景**:
+- AI 分析、网络请求、浏览器操作都可能失败
+- 用户需要清晰的错误信息和可操作的恢复步骤
+- 系统需要区分用户错误和系统错误
+
+**决策**: 统一错误码体系 + 分类错误处理 + 友好用户消息
+
+**理由**:
+- 统一错误码便于追踪和调试
+- 分类错误处理（AI、网络、数据库、验证）
+- 用户友好消息 vs 技术日志分离
+
+**技术实现**:
+- 错误码体系：4xxxx（客户端）+ 5xxxx（服务端）
+- 全局异常处理器：`app.exception_handler`
+- 前端全局拦截：`axios.interceptors`
+
+**影响范围**:
+- 所有 Epic
+- `backend/app/core/errors.py` + `frontend/src/api/client.js`
+
+### ADR-008: 离线架构模式
+
+**状态**: 已接受
+
+**背景**:
+- PRD 要求支持离线查看历史记录（FR132, FR133, FR134）
+- UX 设计规范要求完整的离线模式支持，确保用户在网络不稳定或无网络环境下仍能使用系统的核心功能
+- 需要保证离线状态下的数据一致性和用户体验
+
+**决策**: 三层离线策略 + IndexedDB 本地存储 + 网络状态检测 + 状态持久化
+
+**理由**:
+- IndexedDB 提供大容量本地存储（适合历史数据缓存）
+- 网络状态检测实现自动离线/在线模式切换
+- 离线队列保证网络恢复后自动执行任务
+- 本地数据访问支持离线浏览、搜索、筛选
+- 状态持久化确保应用关闭后离线状态和队列能够恢复
+
+**技术实现**:
+- **网络状态检测**: `navigator.onLine` + `window.addEventListener('online'/'offline')`
+- **离线存储**: IndexedDB 存储历史任务、数据、配置
+- **离线队列**: 本地队列存储待执行任务，网络恢复后自动提交
+- **状态同步**: 网络恢复时自动同步最新数据
+- **离线数据导出**: 支持导出本地数据为 JSON/CSV/Excel 格式
+- **状态持久化**: 离线状态和队列在应用关闭后保存，下次启动时恢复
+
+**三层离线策略**:
+1. **离线模式检测**: 自动检测网络状态，无缝切换在线/离线模式
+2. **离线数据访问**: 支持浏览、搜索、筛选本地历史数据
+3. **离线任务队列**: 网络断开时任务排队，网络恢复后自动执行
+
+**离线模式特性**:
+- **自动检测**: 系统自动检测网络状态，无缝切换在线/离线模式
+- **离线数据访问**: 支持浏览、搜索、筛选本地数据库中的历史数据
+- **离线数据导出**: 支持导出本地数据为 JSON/CSV/Excel 格式
+- **离线任务队列**: 网络断开时创建的任务自动加入队列，网络恢复后自动执行
+- **状态持久化**: 离线状态和队列在应用关闭后保存，下次启动时恢复
+- **清晰提示**: 界面明确标注"离线模式"状态，显示最后同步时间和队列任务数
+
+**离线模式限制**:
+- 创建新爬取任务需要网络连接（除非使用本地 AI 模型如 Ollama）
+- AI 页面分析需要网络连接（除非使用本地 AI 模型）
+- 社区功能（模板分享、下载）需要网络连接
+
+**离线模式 UX 设计**:
+- **状态指示器**: 顶部显示"离线模式"徽章，颜色区分（灰色=离线，蓝色=在线）
+- **最后同步时间**: 显示"最后同步: 10分钟前"，让用户知道数据新鲜度
+- **队列计数**: 显示"离线队列: 3个任务"，让用户知道待处理任务
+- **功能禁用**: 需要网络的功能显示为禁用状态，悬停时显示"此功能需要网络连接"
+- **同步提示**: 网络恢复时显示"网络已恢复，已切换到在线模式"通知
+
+**实施位置**:
+- 前端: `frontend/src/utils/offline.js` (网络状态检测)
+- 前端: `frontend/src/utils/storage.js` (IndexedDB 封装)
+- 前端: `frontend/src/stores/offline.js` (离线状态管理)
+- 前端: `frontend/src/components/OfflineModeIndicator.vue` (离线模式状态显示)
+- 前端: `frontend/src/components/OfflineQueueManager.vue` (离线队列管理)
+- 前端: `frontend/src/components/OfflineDataBrowser.vue` (离线数据访问)
+- 前端: `frontend/src/components/NetworkStatusMonitor.vue` (网络状态监控)
+- 后端: `backend/app/api/v1/offline.py` (离线队列管理)
+
+**影响范围**:
+- Epic 3: 爬取任务管理 (Story 3.7 - 离线任务队列管理)
+- Epic 4: 用户界面 & 交互 (离线模式 UI)
+- Epic 5: 数据管理 & 导出 (Story 5.8 - 离线数据访问)
+- Epic 8: 桌面部署与系统集成 (Story 8.5 - 离线模式支持)
+
+### ADR-009: 撤销/重做机制
+
+**状态**: 已接受
+
+**背景**:
+- PRD 要求支持撤销配置更改（FR135）和恢复误删的任务（FR136）
+- UX 设计规范要求提供可逆的操作体验，减少误操作风险
+- 用户需要撤销/重做功能来建立操作的安全感
+
+**决策**: 命令模式 + 历史栈 + 软删除机制 + 键盘快捷键支持
+
+**理由**:
+- 命令模式封装操作，支持撤销/重做
+- 历史栈记录操作序列，可回溯到任意状态
+- 软删除机制提供恢复窗口（30天）
+- 限制历史栈大小防止内存溢出
+- 键盘快捷键提升操作效率
+
+**技术实现**:
+- **配置撤销**: 最多撤销 10 次配置更改，使用命令模式
+- **任务恢复**: 软删除机制，30 天恢复窗口
+- **历史栈**: 使用栈结构存储操作命令
+- **状态快照**: 关键操作前保存状态快照
+- **键盘快捷键**: Ctrl+Z 撤销，Ctrl+Y 重做（Windows/Linux），Cmd+Z 撤销，Cmd+Shift+Z 重做（macOS）
+- **撤销历史记录**: 提供撤销历史记录界面，支持选择性恢复
+- **错误处理**: 撤销失败时显示错误原因和替代方案
+
+**配置撤销实现**:
+```javascript
+// 命令模式示例
+class ConfigCommand {
+  constructor(oldConfig, newConfig) {
+    this.oldConfig = oldConfig
+    this.newConfig = newConfig
+    this.timestamp = new Date()
+    this.description = `配置更改: ${this.getDescription()}`
+  }
+
+  execute() {
+    applyConfig(this.newConfig)
+  }
+
+  undo() {
+    applyConfig(this.oldConfig)
+  }
+
+  getDescription() {
+    // 生成操作描述
+    return "AI 模型配置"
+  }
+}
+
+// 历史栈管理
+const configHistory = []
+const MAX_HISTORY = 10
+
+function executeConfigCommand(command) {
+  command.execute()
+  configHistory.push(command)
+  if (configHistory.length > MAX_HISTORY) {
+    configHistory.shift()
+  }
+  showUndoNotification(command.description)
+}
+
+function undoConfig() {
+  const command = configHistory.pop()
+  if (command) {
+    try {
+      command.undo()
+      showSuccessNotification("已恢复到操作前的状态")
+      return true
+    } catch (error) {
+      showErrorNotification(`无法撤销: ${error.message}`)
+      // 提供替代方案
+      showAlternativeSolution(error)
+      return false
+    }
+  }
+  return false
+}
+
+function redoConfig() {
+  // 重做逻辑
+}
+```
+
+**任务恢复实现**:
+- **软删除**: 标记 `deleted_at` 字段而非物理删除
+- **恢复窗口**: 30 天后自动清理软删除记录
+- **回收站**: 提供回收站界面查看和恢复已删除任务
+- **选择性恢复**: 支持从历史记录中选择性恢复特定操作
+
+**撤销/重做 UX 设计要点**:
+- **撤销提示**: 操作后显示"已保存配置 - 撤销"提示，3秒后自动消失
+- **撤销按钮**: 工具栏提供撤销/重做按钮，显示可用状态
+- **快捷键支持**: Ctrl+Z 撤销，Ctrl+Y 重做（Windows/Linux），Cmd+Z 撤销，Cmd+Shift+Z 重做（macOS）
+- **回收站**: 删除的任务移动到回收站，显示"已删除 - 恢复"提示
+- **恢复窗口**: 任务删除后30天内可恢复，显示"30天后自动清理"
+- **历史记录**: 提供撤销历史记录界面，显示操作时间、类型、描述
+- **选择性恢复**: 支持从历史记录中选择性恢复特定操作
+- **错误提示**: 撤销失败时显示"无法撤销: [原因]"和替代方案
+
+**实施位置**:
+- 前端: `frontend/src/stores/config.js` (配置历史栈)
+- 前端: `frontend/src/stores/tasks.js` (任务软删除)
+- 前端: `frontend/src/components/UndoRedoToolbar.vue` (撤销/重做工具栏)
+- 前端: `frontend/src/components/UndoHistoryPanel.vue` (撤销历史记录)
+- 前端: `frontend/src/components/RecycleBin.vue` (任务删除恢复)
+- 后端: `backend/app/api/v1/config.py` (配置撤销 API)
+- 后端: `backend/app/api/v1/crawl_tasks.py` (任务恢复 API)
+- 数据库: `crawl_tasks.deleted_at` 字段 (软删除标记)
+
+**影响范围**:
+- Epic 3: 爬取任务管理 (Story 3.8 - 任务删除撤销功能)
+- Epic 4: 用户界面 & 交互 (Story 4.11 - 配置撤销功能)
 
 ---
 
-## 项目上下文分析 (Project Context Analysis)
+## Component Strategy & Implementation Roadmap
 
-### 功能需求概览 (Functional Requirements Overview)
+### Component System Overview
 
-我发现了**130+个功能需求**，主要分为以下类别：
+**Design System Choice**: Naive UI
 
-1. **AI页面分析和数据提取**（FR1-FR10）
-   - AI自动识别页面结构和数据字段
-   - 数据准确率目标：MVP 70-80%，Post-MVP 90-95%
-   - AI自适应能力：48-72小时内自动适应网站结构变化
-   - 人工审核和修正功能，系统从用户调整中学习
+**Platform Context**: Electron desktop application (Vue.js frontend)
 
-2. **多提供商AI模型配置**（FR11-FR28）
-   - 支持本地模型（Ollama）和云端模型（OpenAI、Anthropic、Qwen、豆包、GLM、Google Gemini）
-   - 统一抽象层，支持无缝切换
-   - 自动回退机制，成本追踪和预算管理
-   - 数据脱敏选项
+**Core Goal**: Ensure long-term iteration capability for feature enhancements
 
-3. **用户界面和交互**（FR29-FR37）
-   - 桌面应用程序（.exe、.msi、.dmg、.deb、.rpm）
-   - 零代码体验，像搜索引擎一样简单
-   - 实时反馈和进度显示
-   - CLI接口支持
+### Component Strategy
 
-4. **数据管理和导出**（FR38-FR46）
-   - 支持JSON、CSV、Excel导出
-   - 本地PostgreSQL数据库存储
-   - 按数据源组织到不同表
-   - 数据搜索和过滤
+**Naive UI Available Components**:
 
-5. **爬取任务管理**（FR47-FR56）
-   - 单个和批量网址爬取
-   - 任务调度（定时）
-   - 暂停、恢复、取消任务
-   - 任务组织和管理
+Basic UI Components:
+- Button (various variants: primary, secondary, text, quaternary)
+- Input/InputGroup
+- Select
+- Card
+- List/ListItem
+- DataTable/Tree
+- Progress/ProgressCircle/Bar
+- Steps/Step
+- Notification/Message
+- Modal/Dialog
+- Tabs/TabPane
+- Menu/MenuItem
+- Dropdown
+- Tooltip
+- Popover
+- Form/FormValidation
+- Switch
+- Checkbox/Radio
+- TreeSelect/Cascader
+- DynamicTags
+- Statistic/CountTo
+- Badge/Tag
+- Drawer/Sider
+- Collapse/CollapseItem
+- Timeline
+- Result (empty state, error state)
+- Avatar
+- Pagination
+- Spin
+- Skeleton
+- BackTop
+- Anchor
+- Affix
+- VirtualList
 
-6. **反爬虫和合规**（FR57-FR66）
-   - 请求频率控制
-   - User-Agent轮换
-   - IP轮换和代理池
-   - 验证码处理
-   - 遵守robots.txt和服务条款
+**Component Gap Analysis**:
 
-7. **平台和部署**（FR67-FR76）
-   - Windows 10/11、macOS 10.15+、Linux支持
-   - Docker、Docker Compose、Kubernetes支持
-   - CI/CD集成
-   - 自动更新机制
+1. **Gap 1** - AI Analysis Progress Component: Naive UI Progress is suitable for basic progress, but lacks detailed step display, estimated time, and current data source name
+2. **Gap 2** - Field Selection List Component: Naive UI DataTable does not support inline editing, confidence display, batch selection, and field type icons
+3. **Gap 3** - First-Time Wizard Component: Naive UI Steps needs extension to support example URLs, configuration suggestions, and contextual help
+4. **Gap 4** - Smart URL Input Component: Naive UI AutoComplete does not support history, example selection, smart suggestions, and validation status
+5. **Gap 5** - Celebration Animation Component: Naive UI does not provide confetti effects, data statistics display, and achievement animations
 
-8. **系统集成**（FR77-FR85）
-   - ETL流程集成
-   - 数据仓库集成（Snowflake、BigQuery、Redshift）
-   - 实时数据流（Kafka、Kinesis）
-   - Python SDK、Airflow Operator、Tableau集成
+### Custom Components
 
-9. **安全和合规**（FR86-FR95）
-   - 本地数据存储，不上传云端
-   - AES-256加密
-   - 基于角色的访问控制
-   - 符合GDPR、CCPA、中国网络安全法等
+#### AIAnalysisProgress
 
-10. **社区和协作**（FR96-FR113）
-    - 模板分享和下载
-    - 评价和反馈系统
-    - 文档和教程
-    - 社区互动和协作项目
+**Purpose**: Display real-time progress of AI page structure analysis
 
-11. **监控和性能**（FR114-FR131）
-    - 实时监控仪表板
-    - 告警功能
-    - 性能指标和统计
-    - 系统资源监控
+**Use Cases**: AI analysis phase in first crawl, regular crawl, batch crawl
 
-### 非功能需求概览 (Non-Functional Requirements Overview)
+**Structure**: Progress bar + percentage + current step text + estimated time + cancel button
 
-发现了**65+个非功能需求**，关键包括：
+**States**: default (analyzing), success (completed), error (failed), warning (warning)
 
-1. **性能要求**（NFR1-NFR7）
-   - 页面分析和数据提取：8秒内完成（95th percentile）
-   - 支持100个并发用户
-   - 支持1000个并发爬取任务
-   - API响应时间：200ms（95th percentile）
-   - 99.9%正常运行时间
+**Variants**: compact (sidebar), detailed (main interface)
 
-2. **安全（Security）**（NFR9-NFR16）
-   - AES-256数据加密
-   - TLS 1.3传输加密
-   - 基于角色的访问控制（RBAC）
-   - 审计日志
-   - 多因素认证（MFA）
-   - 符合OWASP Top 10安全标准
+**Accessibility**: `role="progressbar"` + ARIA values + state change notifications
 
-3. **可扩展性**（NFR17-NFR23）
-   - 通过容器化实现水平扩展
-   - 处理10倍负载增长
-   - 分布式爬取
-   - 查询优化和缓存策略
-
-4. **AI可靠性**（NFR40-NFR47）
-   - MVP阶段准确率：70-80%
-   - Post-MVP阶段准确率：90-95%
-   - 48-72小时内自动适应网站结构变化
-   - 90%的网站结构变化自动适应
-   - 提供决策解释
-
-5. **AI模型提供商性能**（NFR48-NFR65）
-   - 支持至少5个不同的AI模型提供商
-   - 5秒内完成配置
-   - 5秒内切换提供商
-   - API响应时间<10秒（95th percentile）
-   - 3秒内自动回退到备用模型
-
-6. **维护成本降低**（NFR48-NFR54）
-   - 与传统爬虫相比维护时间减少70%
-   - 自动检测和适应网站结构变化
-   - 自动错误恢复和重试
-
-7. **本地部署资源要求**（NFR55-NFR60）
-   - 最低4GB RAM
-   - 最低2 CPU核心
-   - 最多10GB磁盘空间
-   - 支持离线操作
-
-8. **反爬虫机制**（NFR61-NFR69）
-   - 请求频率控制
-   - User-Agent轮换
-   - 代理池配置
-   - 验证码处理
-   - 机器人识别和行为模拟
-
-### 技术约束和依赖 (Technical Constraints & Dependencies)
-
-- **编程语言**：Python 3.10+
-- **浏览器自动化**：Playwright Python v1.51.0（唯一选择，ADR-003）
-- **数据存储**：PostgreSQL本地数据库（ADR-004）
-- **任务调度**：Celery + Redis
-- **AI模型提供商**：
-  - 本地：Ollama（Llama、Mistral、Qwen等）
-  - 云端：OpenAI、Anthropic、Qwen（通义千问）、豆包、GLM（智谱AI）、Google Gemini
-- **前端框架**：Electron（推荐）
-- **部署**：本地桌面应用，支持Windows、macOS、Linux
-- **合规要求**：
-  - 《中华人民共和国网络安全法》
-  - 《中华人民共和国个人信息保护法》
-  - 《中华人民共和国数据安全法》
-  - GDPR（欧盟）
-  - CCPA（加州）
-- **关键实现细节（来自ADR分析）**：
-  - Playwright需要Worker Pool模式管理浏览器实例
-  - 每个浏览器实例占用100-200MB内存
-  - 支持10-20个并发浏览器上下文
-  - FastAPI（async）需要与Celery（多进程）正确集成
-
-### 项目规模评估 (Project Scale Assessment)
-
-**主要技术领域**：全栈应用（后端、AI集成、桌面UI、数据库、任务调度）
-
-**复杂度级别**：**中高**
-- AI集成和多种提供商管理
-- 浏览器自动化和反爬虫
-- 多平台桌面应用
-- 实时反馈和WebSocket通信
-- 严格的法规合规（中、欧、美）
-
-**预估架构组件数**：**20-30个主要组件**
-
-**规模指标**：
-- 并发用户：100个（NFR2）
-- 并发任务：1000个（NFR3）
-- 数据规模：100万条记录/数据源（NFR23）
-- 数据源：支持多数据源组织到不同表（FR41）
-
-### 跨领域关注点 (Cross-Cutting Concerns Identified)
-
-1. **数据隐私和合规**（影响所有组件）
-   - 本地数据存储（ADR-001）
-   - 个人信息识别和保护（中国法规专项）
-   - 审计日志和访问控制
-   - 符合中、欧、美法规
-
-2. **AI不确定性处理**（影响核心功能）
-   - 置信度评分和展示（NFR44）
-   - 人工修正流程（FR8）
-   - 从用户反馈中学习（FR10）
-   - 自动适应机制（FR9，NFR41-NFR43）
-
-3. **多提供商AI管理**（影响架构设计）
-   - 统一抽象层（ADR-012）
-   - 提供商切换和回退（ADR-013）
-   - 成本追踪和预算管理（ADR-014）
-   - 数据脱敏（ADR-015）
-   - 混合本地-云端架构（ADR-016）
-
-4. **反爬虫机制**（影响爬取组件）
-   - 多层反爬策略（ADR-005）
-   - 自适应调整
-   - 行为模拟（FR61）
-   - 代理池和IP轮换（FR59）
-
-5. **实时反馈和进度**（影响用户界面和后端架构）
-   - WebSocket实时通信（架构决策）
-   - 进度可视化（FR32）
-   - 错误实时报告（FR37）
-   - 性能指标展示（FR118）
-
-6. **资源管理**（影响所有运行时组件）
-   - 浏览器实例池（100-200MB/实例）
-   - 数据库连接池
-   - WebSocket连接管理
-   - 内存监控和告警
-
-7. **监控和可观察性**（影响运维和故障排查）
-   - AI提供商性能监控（NFR52）
-   - 任务状态追踪（Celery结果backend）
-   - 系统资源监控（FR117）
-   - 详细日志和审计（NFR12）
-
-### 关键架构洞察（来自Architecture Decision Records分析）
-
-**核心架构决策：**
-
-1. **AI提供商架构**：混合架构（本地+云端多提供商）
-   - 需要统一抽象层（AIModelProvider接口）
-    - Strategy Pattern管理多个提供商
-    - 自动回退和成本感知选择
-    - 数据脱敏和隐私警告
+**Implementation Location**: `frontend/src/components/AIAnalysisProgress.vue`
 
 ---
 
-## Starter模板评估 (Starter Template Evaluation)
+#### FieldSelectionList
 
-### 主要技术领域
+**Purpose**: Display list of fields identified by AI, support selection and correction
 
-基于项目上下文分析：
+**Use Cases**: After AI analysis completes, user selects fields to extract
 
-**主要技术领域：** **桌面应用 + AI集成 + 任务调度**
+**Structure**: Field name + preview value + confidence + type icon + checkbox + edit button
 
-PRD中已明确的技术决策：
+**States**: selected (checked), unselected (unchecked), editing (being edited), loading (validating)
 
-1. **后端框架**：FastAPI（通过async/await特性推断）
-2. **任务调度**：Celery 5.3+ with Redis
-3. **浏览器自动化**：Playwright v1.51.0（ADR-003明确）
-4. **数据存储**：PostgreSQL本地数据库（ADR-004明确）
-5. **前端框架**：Electron（推荐）
-6. **AI架构**：混合本地-云端（ADR-011、ADR-016明确）
-7. **编程语言**：Python 3.10+（明确要求）
+**Variants**: compact (compact), detailed (detailed), inline (inline editing)
 
-### Starter模板适用性分析
+**Accessibility**: Unique ID + ARIA labels + keyboard navigation + selection state
 
-**重要发现：**
+**Implementation Location**: `frontend/src/components/FieldSelectionList.vue`
 
-这个项目**不适合使用标准Starter模板**，原因如下：
-
-1. **项目类型特殊**
-   - 不是标准Web应用（Next.js、Vite等不适合）
-   - 不是标准CLI工具（Oclif、Commander等不适合）
-   - 是高度集成的**桌面应用 + AI爬虫系统**
-
-2. **架构决策已明确**
-   - PRD包含16个详细的ADR（架构决策记录）
-   - 每个ADR都包含决策、理由和后果
-   - 技术栈已经在PRD阶段确定
-
-3. **技术栈高度集成**
-   - 需要Python + FastAPI + Celery + Playwright + PostgreSQL + Redis + Electron
-   - 还需要AI抽象层（支持多个提供商）
-   - 标准starter模板不支持这种级别的集成
-
-4. **项目规模和复杂度**
-   - 中高复杂度项目
-   - 需要自定义架构来满足：
-     - 多平台桌面应用
-     - 多AI提供商管理
-     - 实时反馈（WebSocket）
-     - 严格合规要求
-     - Worker Pool模式（浏览器管理）
-
-### 架构决策增强（来自First Principles分析）
-
-#### ADR-001增强：本地部署架构
-
-**原决策：** 所有数据处理和存储在用户本地机器上
-
-**First Principles洞察：：**
-- **发现：** "本地部署"的表述过于绝对化
-- **建议：** 应该表述为"本地优先，云端可选"以平衡隐私和成本
-- **与ADR-016一致：** ADR-016（混合架构）是正确的方向
-
-**增强后的决策：** 混合架构（本地优先，云端可选）
-- **理由更新：**
-  - 隐私不是二元选择，需要本地和云端选项
-  - 用户应该能够根据需求选择隐私 vs 成本
-  - 云端使用前必须明确警告和同意
-- **新后果：**
-  - 架构复杂度增加（ADR-016承认）
-  - 需要统一抽象层（ADR-012、ADR-013）
-  - 需要成本追踪（ADR-014）
-
-#### ADR-003增强：浏览器自动化框架
-
-**原决策：** 使用Playwright 1.40.0+作为唯一浏览器自动化框架
-
-**First Principles洞察：：**
-- **发现：** PRD中的Playwright版本（1.40.0+）比最新版本（v1.51.0）旧约6个月
-- **建议：** 使用Playwright Python v1.51.0以获得最新更新和性能改进
-- **Context7验证：** Microsoft高源信誉（Benchmark 91.78）
-
-**增强后的决策：** Playwright Python v1.51.0
-- **理由更新：**
-  - Microsoft高源信誉（Benchmark 91.78%）
-  - 最新版本v1.51.0包含重要更新和性能改进
-  - 与FastAPI和Celery的Python生态最佳实践
-  - 跨浏览器支持（Chromium、Firefox、WebKit）
-- **修正假设：**
-  - v1.51.0优于PRD中指定的1.40.0+
-  - 新版本可能包含性能优化和bug修复
-  - Worker Pool模式在v1.51.0中更加成熟
-- **新后果：**
-  - 更好的性能和稳定性
-  - 最新的浏览器自动化API
-  - 可能的内存和资源管理改进
-
-#### ADR-011增强：多提供商AI模型支持
-
-**原决策：** 支持本地和云端AI模型提供商通过统一抽象层
-
-**First Principles洞察：：**
-- **发现：** ADR-011的后果不完整，缺少关键管理需求
-- **建议：** 需要明确API key管理、成本追踪、健康检查的实现
-
-**增强后的决策：** 混合架构带完整管理
-- **理由更新：**
-  - 本地模型满足隐私和离线需求（第一原理）
-  - 云端模型满足性能和可访问性（第三、四原理）
-  - 统一抽象层支持无缝切换（第一原理）
-- **新实现要求（补充ADR-014、ADR-015）：**
-  - 需要加密的API key管理和成本追踪
-  - 需要提供商健康检查和失效处理
-  - 需要用户同意和警告机制
-  - 需要成本感知选择策略
-
-#### ADR-013增强：多提供商回退策略
-
-**原决策：** 实现自动回退机制当主AI模型不可用时
-
-**First Principles洞察：**
-- **发现：** ADR-013缺少关键实现细节（可配置性、成本透明）
-- **建议：** 回退不应该是二元的，应该支持灵活策略
-
-**增强后的决策：** 可配置的自动回退策略
-- **理由更新：**
-  - 支持NFR6（99.9%正常运行时间）
-  - 保护用户体验用户体验免受提供商中断影响（第二原理）
-  - 透明成本追踪和用户通知（第三原理）
-  - 备用模型质量验证（第四原理）
-- **新实现要求：**
-  - 回退策略应可配置（自动/手动/禁用）
-  - 成本追踪必须实时更新
-  - 用户通知必须明确说明哪个提供商在使用和原因
-  - 备用模型选择应考虑成本预算（ADR-014）
-- **新后果（补充）：**
-  - 增加配置复杂度
-  - 需要提供商健康检查基础设施
-  - 需要成本预算监控系统
-
-### Starter模板评估结论
-
-**项目技术栈已明确：**
-
-由于PRD包含16个详细的架构决策记录（ADR-001至ADR-016），且项目具有高度集成的技术栈，**不适合使用标准Starter模板**。
-
-**技术栈确认：**
-- **编程语言**：Python 3.10+
-- **后端框架**：FastAPI（async/await）
-- **任务调度**：Celery 5.3+ with Redis
-- **浏览器自动化**：Playwright Python v1.51.0（更新版本）
-- **数据存储**：PostgreSQL + Redis
-- **前端框架**：Electron（跨平台桌面应用）
-- **AI架构**：混合本地-云端，多提供商支持
-- **API架构**：REST API + WebSocket（实时通信）
-
-**架构决策增强完成：**
-
-通过First Principles分析，我们增强了3个关键ADR：
-1. **ADR-001**：从"本地部署"增强为"混合架构（本地优先）"
-2. **ADR-003**：从Playwright 1.40.0+更新为Playwright Python v1.51.0
-3. **ADR-011**：补充了完整的管理需求（API key、成本追踪、健康检查）
-4. **ADR-013**：增加了可配置性和成本透明要求
-   - 自动回退和成本感知选择
-   - 数据脱敏和隐私警告
-
-2. **浏览器自动化架构**：Playwright v1.51.0 with Worker Pool
-   - 每个Worker进程一个浏览器实例池
-   - 限制并发浏览器上下文（10-20个）
-   - 自动清理未使用实例
-   - 内存使用监控
-
-3. **数据存储架构**：PostgreSQL + Redis
-   - PostgreSQL用于持久化数据存储
-   - Redis用于Celery任务队列和状态
-   - 动态schema管理（数据源→表映射）
-   - JSONB字段支持非结构化数据
-   - 索引优化支持100万+记录查询
-
-4. **前端架构**：Electron（推荐）
-   - 主进程（Node.js）+ 渲染进程（Web前端）
-   - IPC或HTTP API与后端通信
-   - 跨平台打包（Win/macOS/Linux）
-   - 自动更新支持
-
-5. **任务调度架构**：Celery + Redis
-   - 支持定时任务调度
-   - 1000+并发任务支持
-   - 任务优先级队列
-   - Worker Pool模式与Playwright集成
-
-6. **API架构**：REST API（FastAPI）+ WebSocket
-   - REST端点用于CRUD操作（资源管理）
-   - WebSocket端点用于实时流（进度更新）
-   - OpenAPI自动文档生成
-   - 200ms内API响应时间（95th percentile）
-
-**关键权衡和缓解措施：**
-
-- **权衡1**：多提供商AI架构复杂度高 vs 灵活性和隐私保护
-  - 缓解：统一抽象层、详细监控、配置驱动选择
-- **权衡2**：Playwright资源消耗高 vs 功能全面和性能好
-  - 缓解：Worker Pool、配置化并发、自动清理、内存监控
-- **权衡3**：Electron安装包大 vs 现代UI能力
-  - 缓解：Bundle优化、性能模式、资源监控、自动更新
-
-**下一步：技术栈选择**
-
-继续进行技术栈选择，确定具体的框架、库和工具。
-
-[C] 继续到下一步
 ---
 
-## 4. Core Architectural Decisions
+#### DataPreviewTable
 
-### 4.1 Decision Priority Analysis
+**Purpose**: Display crawl result preview, support editing, filtering, sorting
 
-**Critical Decisions (Block Implementation):**
-- Data modeling approach (SQLAlchemy ORM)
-- Authentication method (Argon2id + JWT)
-- API design patterns (FastAPI auto OpenAPI)
-- Electron-Python communication (WebSocket)
-- Configuration management (python-dotenv + Pydantic)
+**Use Cases**: View and edit data after crawl completion
 
-**Important Decisions (Shape Architecture):**
-- Data validation (Pydantic v2)
-- Migration tooling (Alembic)
-- Error handling (custom exception classes)
-- State management (lightweight custom)
-- Logging system (structlog)
-- Testing framework (pytest)
-- Code quality (ruff + mypy)
+**Structure**: Data table + table header + table content + row operations + field status icons
+
+**States**: default (normal), editing (being edited), loading (loading), empty (empty state)
+
+**Variants**: compact (compact), standard (standard), expanded (expanded), card (card view)
+
+**Accessibility**: Semantic table elements + sort status + keyboard navigation
+
+**Implementation Location**: `frontend/src/components/DataPreviewTable.vue`
+
+---
+
+#### FirstTimeWizard
+
+**Purpose**: Guide new users through first-time configuration and first crawl
+
+**Use Cases**: First application launch
+
+**Structure**: Step indicator + welcome page + configuration steps + example URLs + progress display
+
+**States**: active (current step), completed (completed), disabled (disabled)
+
+**Variants**: minimal (minimal), detailed (detailed)
+
+**Accessibility**: ARIA labels + current step indicator + keyboard navigation + form labels
+
+**Implementation Location**: `frontend/src/components/FirstTimeWizard.vue`
+
+---
+
+#### BatchCrawlConfig
+
+**Purpose**: Configure batch crawl tasks
+
+**Use Cases**: Batch crawling multiple websites
+
+**Structure**: URL input area + URL list + global configuration + AI model selection + start button
+
+**States**: valid (valid), invalid (invalid), pending (waiting for validation)
+
+**Variants**: modal (dialog), page (page), embedded (embedded)
+
+**Accessibility**: Input labels + validation status + error descriptions
+
+**Implementation Location**: `frontend/src/components/BatchCrawlConfig.vue`
+
+---
+
+#### TaskMonitorPanel
+
+**Purpose**: Display real-time status of multiple tasks
+
+**Use Cases**: Batch crawl, background task monitoring
+
+**Structure**: Task list + overall progress + resource usage + task logs (expandable)
+
+**States**: running (running), completed (completed), failed (failed), waiting (waiting), paused (paused)
+
+**Variants**: compact (compact), detailed (detailed), dashboard (dashboard)
+
+**Accessibility**: Status icon labels + progress bar ARIA attributes
+
+**Implementation Location**: `frontend/src/components/TaskMonitorPanel.vue`
+
+---
+
+#### CelebrationAnimation
+
+**Purpose**: Celebration effect for first success, batch success
+
+**Use Cases**: First crawl success, batch task all success
+
+**Structure**: Confetti/fireworks animation + data statistics + success message + action buttons
+
+**States**: playing (playing), paused (paused), completed (completed)
+
+**Variants**: mini (small size), full (large size)
+
+**Accessibility**: Animation disable support + ARIA live notifications
+
+**Implementation Location**: `frontend/src/components/CelebrationAnimation.vue`
+
+---
+
+#### SmartURLInput
+
+**Purpose**: Smart input box supporting URL validation, example selection, history
+
+**Use Cases**: All scenarios requiring URL input
+
+**Structure**: Input box + example URLs + history dropdown + validation status indicator
+
+**States**: empty (empty), valid (valid), invalid (invalid), loading (validating)
+
+**Variants**: standalone (standalone), compact (compact), with-suggestions (with suggestions)
+
+**Accessibility**: Input labels + validation status descriptions + listbox ARIA attributes
+
+**Implementation Location**: `frontend/src/components/SmartURLInput.vue`
+
+---
+
+#### ErrorHandlingDialog
+
+**Purpose**: Display errors and provide executable actions
+
+**Use Cases**: All error scenarios
+
+**Structure**: Error type icon + error description + error code + impact scope + executable action list
+
+**States**: error (error), warning (warning), info (info)
+
+**Variants**: modal (dialog), inline (inline), fullscreen (fullscreen)
+
+**Accessibility**: Dialog role + ARIA live notifications + focus management
+
+**Implementation Location**: `frontend/src/components/ErrorHandlingDialog.vue`
+
+---
+
+#### ViewSwitcher
+
+**Purpose**: Switch between simple, dashboard, professional views
+
+**Use Cases**: All view scenarios
+
+**Structure**: View button group + selected state indicator + view description (tooltip)
+
+**States**: active (selected), inactive (unselected)
+
+**Variants**: compact (compact button), labeled (with labels)
+
+**Accessibility**: Button group role + selected state + label descriptions
+
+**Implementation Location**: `frontend/src/components/ViewSwitcher.vue`
+
+---
+
+#### OfflineModeIndicator
+
+**Purpose**: Display current network status and offline mode information
+
+**Use Cases**: All interfaces, when network status changes
+
+**Structure**: Status badge + network status icon + last sync time + offline queue count
+
+**States**: online (online), offline (offline), syncing (syncing)
+
+**Variants**: compact (compact), detailed (detailed), banner (banner)
+
+**Accessibility**: Status change ARIA live notifications + status descriptions
+
+**Implementation Location**: `frontend/src/components/OfflineModeIndicator.vue`
+
+---
+
+#### OfflineQueueManager
+
+**Purpose**: Manage tasks in offline queue
+
+**Use Cases**: Offline mode, after network recovery
+
+**Structure**: Queue task list + queue statistics + execution control + task details
+
+**States**: idle (idle), executing (executing), paused (paused), completed (completed)
+
+**Variants**: modal (dialog), panel (panel), drawer (drawer)
+
+**Accessibility**: List role + task status labels + keyboard navigation
+
+**Implementation Location**: `frontend/src/components/OfflineQueueManager.vue`
+
+---
+
+#### OfflineDataBrowser
+
+**Purpose**: Browse, search, filter local database historical data
+
+**Use Cases**: Offline mode, data management
+
+**Structure**: Data table + search box + filter + pagination + export button
+
+**States**: loading (loading), loaded (loaded), empty (empty), error (error)
+
+**Variants**: compact (compact), standard (standard), full (full)
+
+**Accessibility**: Table semantics + search labels + filter status descriptions
+
+**Implementation Location**: `frontend/src/components/OfflineDataBrowser.vue`
+
+---
+
+#### NetworkStatusMonitor
+
+**Purpose**: Monitor network status and automatically switch online/offline mode
+
+**Use Cases**: Application launch, network status changes
+
+**Structure**: Network detection + status switching + notification display + queue execution
+
+**States**: monitoring (monitoring), switching (switching), stable (stable)
+
+**Variants**: background (background), visible (visible)
+
+**Accessibility**: Status change ARIA live notifications + network status descriptions
+
+**Implementation Location**: `frontend/src/components/NetworkStatusMonitor.vue`
+
+---
+
+#### UndoRedoToolbar
+
+**Purpose**: Provide toolbar for undo/redo operations
+
+**Use Cases**: Configuration changes, task deletion, data modification
+
+**Structure**: Undo button + redo button + history button + shortcut hints
+
+**States**: enabled (available), disabled (disabled)
+
+**Variants**: compact (compact), labeled (with labels), icon-only (icon only)
+
+**Accessibility**: Button group role + available status + shortcut hints
+
+**Implementation Location**: `frontend/src/components/UndoRedoToolbar.vue`
+
+---
+
+#### UndoHistoryPanel
+
+**Purpose**: Display undo history, support selective recovery
+
+**Use Cases**: View undo history, selective recovery of operations
+
+**Structure**: History list + operation details + recovery button + clear button
+
+**States**: empty (empty), populated (has records), loading (loading)
+
+**Variants**: modal (dialog), drawer (drawer), panel (panel)
+
+**Accessibility**: List role + operation type labels + keyboard navigation
+
+**Implementation Location**: `frontend/src/components/UndoHistoryPanel.vue`
+
+---
+
+#### RecycleBin
+
+**Purpose**: Display deleted tasks, support recovery
+
+**Use Cases**: After task deletion, recover deleted tasks
+
+**Structure**: Deleted task list + recovery button + permanent delete button + clear button
+
+**States**: empty (empty), populated (has records), expiring (about to expire)
+
+**Variants**: modal (dialog), page (page), drawer (drawer)
+
+**Accessibility**: List role + recovery window hint + keyboard navigation
+
+**Implementation Location**: `frontend/src/components/RecycleBin.vue`
+
+---
+
+### Component Implementation Strategy
+
+**Design Token Consistency**:
+
+- All custom components use Naive UI theme variables (colors, spacing, fonts)
+- Follow Naive UI component conventions and interaction patterns
+- Maintain visual consistency with Naive UI
+
+**Accessibility First**:
+
+- All components support keyboard navigation
+- All interactive elements have clear focus states
+- All dynamic content changes notify screen readers via ARIA live
+- Color contrast meets WCAG 2.1 AA standards
+
+**Performance Optimization**:
+
+- DataPreviewTable supports virtual scrolling for large datasets
+- TaskMonitorPanel uses debouncing for real-time updates
+- CelebrationAnimation uses GPU-accelerated animations
+
+**Progressive Enhancement**:
+
+- Basic functionality available in all browsers
+- Advanced features enabled in supporting browsers
+- Animations and transitions can be disabled via system preferences
+
+---
+
+### Implementation Roadmap
+
+**Phase 1 - Core Components (MVP)**:
+
+1. **SmartURLInput** - First-time journey, regular crawl journey
+2. **FirstTimeWizard** - First-time journey
+3. **AIAnalysisProgress** - All crawl journeys
+4. **FieldSelectionList** - Regular crawl journey
+5. **NetworkStatusMonitor** - Network status monitoring (offline mode foundation)
+6. **OfflineModeIndicator** - Offline mode status display
+
+**Phase 2 - Support Components (MVP+)**:
+
+7. **DataPreviewTable** - Regular crawl, data management
+8. **TaskMonitorPanel** - Batch crawl
+9. **ErrorHandlingDialog** - All journeys
+10. **ViewSwitcher** - All views
+11. **OfflineDataBrowser** - Offline data access
+12. **OfflineQueueManager** - Offline queue management
+13. **UndoRedoToolbar** - Undo/redo operations
+
+**Phase 3 - Enhancement Components (Post-MVP)**:
+
+14. **BatchCrawlConfig** - Batch crawl
+15. **CelebrationAnimation** - First success, batch success
+16. **UndoHistoryPanel** - Undo history records
+17. **RecycleBin** - Task deletion recovery
+18. Performance optimization and feature enhancements
+
+---
+
+## Project Context Analysis
+
+### Requirements Overview
+
+**Functional Requirements:**
+
+**Functional Requirements:**
+
+AI 页面结构学习与数据提取是核心功能，要求达到 70-80%（MVP）至 90-95%（Post-MVP）的准确率。系统需提供零代码体验，用户只需输入网址即可获得结构化数据。
+
+**关键技术架构需求：**
+- 多 AI 提供商支持：本地 Ollama + 云端 OpenAI/Anthropic/Qwen/Doubao/GLM/Google/Custom
+- 统一抽象层：3 秒超时自动回退机制
+- 浏览器自动化：Playwright v1.51.0，Worker Pool 模式
+- 任务调度：Celery 异步任务队列
+- 三级界面策略：简洁视图（新手）→ 仪表板视图（数据工程师）→ 专业视图（开发者）
+
+**数据管理需求：**
+- 本地 PostgreSQL 存储（满足合规性要求）
+- 数据导出：JSON、CSV、Excel
+- 按数据源组织存储
+- 支持数据预览、搜索、过滤
+- 离线数据访问：支持离线浏览、搜索、筛选本地数据（FR133）
+
+**离线功能需求：**
+- 离线模式支持：自动检测网络状态，切换离线/在线模式（FR132）
+- 离线任务队列：网络断开时任务排队，网络恢复后自动执行（FR134）
+- 离线数据访问：支持离线查看已爬取的历史数据（FR133）
+
+**撤销/恢复需求：**
+- 配置撤销：最多撤销 10 次配置更改（FR135）
+- 任务恢复：软删除机制，30 天恢复窗口（FR136）
+
+**Non-Functional Requirements:**
+
+**性能要求：**
+- 页面分析时间：< 8 秒（95th percentile）
+- 支持 100 并发用户
+- 每个浏览器实例：100-200MB 内存
+- 支持 10-20 并发浏览器上下文
+
+**准确率要求：**
+- MVP 阶段：70-80%，提供人工审核和修正
+- Post-MVP 阶段：90-95%
+- AI 自适应：网站结构变化后 48-72 小时内自动适应
+
+**合规性要求：**
+- GDPR、CCPA、中国网络安全法、个人信息保护法
+- 数据本地存储（境内）
+- 敏感数据加密（AES-256）
+- 传输加密（TLS 1.3）
+- 审计日志（保留 90 天）
+
+**可访问性要求：**
+- WCAG 2.1 AA 标准
+- 键盘导航支持
+- 屏幕阅读器兼容
+- 高对比度模式支持
+
+**Scale & Complexity:**
+
+- Primary domain: 桌面应用 + 后端 API + AI 集成
+- Complexity level: **中等偏高**
+- Estimated architectural components: 8-10 个主要组件
+
+**复杂度驱动因素：**
+- ✅ AI 技术集成（多提供商、自动回退）
+- ✅ 跨平台桌面应用（Electron）
+- ✅ 复杂状态管理（前端三级视图 + 后端任务进度）
+- ✅ 严格合规性要求（四套法规）
+- ✅ 实时同步需求（WebSocket 进度事件）
+- ✅ 浏览器资源管理（Worker Pool 模式）
+
+### Technical Constraints & Dependencies
+
+**强制技术栈：**
+- 后端：Python 3.10+ + FastAPI 0.100+ + SQLAlchemy 2.0+
+- 任务队列：Celery 5.3+ + Redis 7.x
+- 浏览器自动化：Playwright v1.51.0（固定版本）
+- 数据库：PostgreSQL 15.x（本地部署）
+- 前端：Vue.js + Naive UI
+- 桌面框架：Electron
+
+**关键约束：**
+- 本地部署（非云端、非 SaaS）
+- 数据不离开用户机器
+- Playwright 必须使用 Worker Pool 模式
+- 支持离线查看历史记录（核心爬取需在线）
+
+**依赖关系：**
+- FastAPI ← Playwright（异步集成）
+- Celery ← Playwright（任务执行）
+- Vue.js ← Naive UI（设计系统）
+- Electron ← Vue.js（桌面打包）
+
+### Cross-Cutting Concerns Identified
+
+**1. AI 模型管理**
+- 多提供商统一抽象接口
+- 自动回退机制（3 秒超时）
+- API Key 安全管理（加密存储）
+- 成本控制（用量跟踪）
+
+**2. 反爬虫机制**
+- 请求频率控制
+- User-Agent 轮换
+- 随机延迟
+- 验证码识别（Post-MVP）
+
+**3. 数据隐私与合规**
+- 本地存储保证
+- 敏感数据识别和标记
+- 用户同意管理
+- 数据删除和导出
+
+**4. 实时进度同步**
+- WebSocket 事件推送
+- 三级视图状态同步
+- 离线状态处理
+
+**5. 错误处理与恢复**
+- AI 分析失败处理
+- 网络错误重试
+- 浏览器崩溃恢复
+- 友好错误信息
+
+**6. 性能与资源管理**
+- Worker Pool 浏览器实例复用
+- 虚拟滚动（大数据集）
+- 内存泄漏防护
+- 资源使用监控
+
+**7. 离线功能管理**
+- 网络状态检测和自动切换
+- IndexedDB 本地数据存储
+- 离线任务队列管理
+- 离线/在线数据同步
+
+**8. 撤销/恢复机制**
+- 配置更改撤销（命令模式）
+- 任务软删除和恢复
+- 历史栈管理
+- 状态快照和回滚
+## Core Architectural Decisions (PRD 明确的技术选择)
+
+### 决策优先级分析
+
+**Critical Decisions (阻塞实施):**
+- 无 - PRD 已明确所有关键技术选择
+
+**Important Decisions (塑造架构):**
+- 所有架构决策已由 PRD 确定
 
 **Deferred Decisions (Post-MVP):**
-- Advanced monitoring (Prometheus + Grafana)
-- Distributed tracing (OpenTelemetry)
-- Container orchestration (Kubernetes)
-- Advanced caching (Redis cluster)
-- CDN integration (for static assets)
+- 验证码识别服务
+- 社区分享和模板市场
+- 高级反爬虫策略（IP 池、行为模拟）
 
-### 4.2 Data Architecture
+### 数据架构
 
-#### 4.2.1 Data Modeling Approach
+**数据库选择：** PostgreSQL 15.x
+- **版本：** 15.x（本地部署，PRD 明确要求）
+- **理由：** 本地部署合规要求 + JSON 数据类型支持 + Full-Text 搜索能力
+- **影响：** Epic 3 (数据管理 & 导出), Epic 5 (数据导出)
 
-**Decision: SQLAlchemy ORM**
-- **Version**: 2.0+ (async support)
-- **Rationale**: 
-  - Mature, production-tested ORM with Python 3.10+ support
-  - Async/await compatibility with FastAPI and Celery
-  - Rich query API and relationship management
-  - Community support and extensive documentation
-- **Affects**: All backend services, data access layer
-- **Benefits**:
-  - Type safety with IDE autocomplete
-  - Automatic query optimization
-  - Migration support via Alembic
-  - Connection pooling and transaction management
+**数据模型策略：** 按数据源组织
+- **方案：** `data_source_id` 作为主键，每个数据源独立表
+- **理由：** PRD 要求按数据源组织存储，便于管理和查询
+- **影响：** Epic 2 (AI 页面分析), Epic 3 (爬取任务管理)
 
-#### 4.2.2 Data Validation Strategy
+**验证策略：** AI 准确率 < 95% 时触发人工审核
+- **方案：** AI 提取后计算置信度，< 95% 标记为"需人工审核"
+- **理由：** MVP 70-80% 准确率目标，需要人机协同
+- **影响：** Epic 4 (用户界面 - 简洁视图), Epic 6 (安全与合规)
 
-**Decision: Pydantic v2**
-- **Version**: 2.0+
-- **Rationale**:
-  - Native FastAPI integration (automatic request/response validation)
-  - Type hints for better IDE support
-  - JSON schema generation for API documentation
-  - Performance improvements over v1
-- **Affects**: API endpoints, configuration, data models
-- **Benefits**:
-  - Automatic validation and serialization
-  - Clear error messages
-  - Zero additional code for API validation
-  - Schema generation for documentation
+### AI 模型管理
 
-#### 4.2.3 Migration Approach
-
-**Decision: Alembic**
-- **Version**: 1.13+
-- **Rationale**:
-  - SQLAlchemy's official migration tool
-
-  - Mature, production-tested
-  - Supports complex database migrations
-  - Automatic migration generation
-- **Affects**: Database schema management
-- **Benefits**:
-  - Version-controlled schema changes
-  - Rollback capabilities
-  - Team collaboration support
-  - Production-safe migrations
-
-#### 4.2.4 Caching Strategy
-
-**Decision: Redis Caching Extension**
-- **Integration**: Extends existing Redis from Celery
-- **Rationale**:
-  - Redis already in tech stack (ADR-007)
-  - Fast in-memory operations
-  - Supports TTL and advanced cache patterns
-  - Distributed caching support
-- **Affects**: AI provider responses, crawled data, session data
-- **Benefits**:
-  - Reduced API calls to AI providers
-  - Faster response times
-  - Cost reduction
-  - Shared cache across workers
-
-### 4.3 Authentication & Security
-
-#### 4.3.1 Password Hashing Algorithm
-
-**Decision: Argon2id**
-- **Library**: passlib
-- **Rationale**:
-  - 2025 OWASP recommendation for password hashing
-  - Memory-hard algorithm (resistant to GPU/ASIC attacks)
-  - Configurable time cost, memory cost, and parallelism
-  - Supports independent keys and salts
-- **Affects**: User authentication, password storage
-- **Configuration**:
+**提供商抽象层：** 统一接口策略
+- **版本：** FastAPI 0.100+ 异步实现
+- **方案：**
   ```python
-  from passlib.context import CryptContext
+  # 伪代码 - 抽象接口
+  class AIProvider(ABC):
+      async def analyze_page(self, html: str) -> PageAnalysis: ...
+      async def get_model(self) -> str: ...
   
-  pwd_context = CryptContext(
-      schemes=["argon2"],
-      deprecated="auto",
-      argon2__time_cost=2,       # CPU cost
-      argon2__memory_cost=19456,  # 19 MB
-      argon2__parallelism=1,      # threads
-  )
+  class OpenAIProvider(AIProvider): ...
+  class OllamaProvider(AIProvider): ...
   ```
-- **Benefits**:
-  - State-of-the-art security
-  - Protection against brute-force attacks
-  - Future-proof algorithm choice
+- **理由：** 支持 8 个提供商（Ollama、OpenAI、Anthropic、Qwen、Doubao、GLM、Google、Custom）
+- **影响：** Epic 7 (AI 模型集成)
 
-#### 4.3.2 JWT Implementation
+**自动回退机制：** 3 秒超时切换
+- **方案：** asyncio.wait_for(..., timeout=3.0) 包装所有 AI 调用
+- **理由：** PRD 明确要求 3 秒超时自动回退
+- **影响：** Epic 2 (AI 页面分析), Epic 7 (AI 模型集成)
 
-**Decision: PyJWT + python-jose[cryptography]**
-- **Rationale****:
-  - Lightweight, minimal dependencies
-  - Wide adoption and community support
-  - Supports RSA/ECDSA signing and encryption
-  - Compatible with FastAPI OAuth2 flows
-- **Affects**: API authentication, session management
-- **Benefits**:
-  - Stateless authentication
-  - Cross-service token validation
-  - Flexible token configuration (expiry, refresh)
-  - Standard OAuth2 compliance
+**API Key 安全存储：** 加密存储
+- **方案：** 系统密钥环（Windows DPAPI/macOS Keychain/Linux Secret Service）
+- **理由：** 本地部署，必须保护敏感信息
+- **影响：** Epic 1 (用户认证 & 系统配置), Epic 6 (安全与合规)
 
-#### 4.3.3 Data Encryption Approach
+### 前端架构
 
-**Decision: cryptography library (Fernet)**
-- **Rationale**:
-  - Python cryptography standard library
-  - AES-128-CBC with HMAC integrity verification
-  - Automatic key derivation and nonce management
-  - Secure defaults
-- **Affects**: API key storage, sensitive data encryption
-- **Use Cases**:
-  - Encrypting API keys in database
-  - Encrypting user credentials
-  - Encrypting crawler templates (if needed)
-- **Benefits**:
-  - Simple, high-level API
-  - Cryptographically secure defaults
-  - No manual IV/nonce management
+**状态管理：** 三级视图 + WebSocket 同步
+- **版本：** Vue.js 3.4+ Composition API
+- **方案：**
+  - 简洁视图：只存储本地状态
+  - 仪表板视图：WebSocket 监听进度事件
+  - 专业视图：WebSocket + 本地缓存（IndexedDB）
+- **理由：** PRD 要求三级界面策略 + 实时进度同步
+- **影响：** Epic 4 (用户界面 & 交互)
 
-#### 4.3.4 API Security Strategy
+**WebSocket 通信：** 进度事件推送
+- **版本：** FastAPI WebSocket + native WebSocket API
+- **方案：** `/ws/progress/{task_id}` 端点推送爬取进度
+- **理由：** 实时同步爬取状态到仪表板/专业视图
+- **影响：** Epic 3 (任务调度), Epic 4 (实时更新)
 
-**Decision: fastapi-limiter + Custom Middleware**
-- **Rationale**:
-  - Distributed rate limiting via Redis
-  - IP-level and user-level limiting
-  - FastAPI middleware integration
-  - Automatic rate limit headers
-- **Affects**: API endpoints, user experience
-- **Configuration**:
+**离线支持：** IndexedDB 历史记录缓存
+- **方案：** 前端 IndexedDB 存储历史记录，离线可查看
+- **理由：** PRD 要求支持离线查看历史记录
+- **影响：** Epic 4 (离线功能)
+
+### 浏览器自动化
+
+**Worker Pool 模式：** 浏览器实例复用
+- **版本：** Playwright v1.51.0 + Celery 5.3+
+- **方案：**
   ```python
-  from fastapi import FastAPI
-  from fastapi_limiter import FastAPILimiter
-  from fastapi_limiter.depends import RateLimiter
-  
-  app = FastAPI()
-  
-  # IP-based rate limiting
-  @app.get("/api/crawlers", dependencies=[RateLimiter(times(times=10, seconds=60)])
-  async def get_crawlers():
-      ...
+  # Celery worker 配置
+  worker_pool_size = 10-20  # 可配置
+  browser_per_worker = 1
   ```
-- **Additional Security**:
-  - CORS middleware (whitelist allowed origins)
-  - Security headers middleware
-  - API key authentication for sensitive endpoints
-- **Benefits**:
-  - Protection against API abuse
-  - Fair resource allocation
-  - Distributed rate limiting across instances
-  - Granular control per endpoint
+- **理由：** PRD 明确要求 Worker Pool 模式，每个实例 100-200MB
+- **影响：** Epic 2 (AI 页面分析), Epic 3 (任务调度)
 
-### 4.4 API & Communication Patterns
+**资源清理策略：** 防内存泄漏
+- **方案：** 任务完成后显式 `await browser.close()`，定期清理未使用实例
+- **理由：** 长期运行必须防止内存泄漏
+- **影响：** Epic 2 (浏览器资源管理)
 
-#### 4.4.1 API Design Patterns
+### 安全与合规
 
-**Decision: FastAPI Auto OpenAPI + Swagger UI / ReDoc**
-- **Rationale**:
-  - Native FastAPI support, zero configuration
-  - Automatic Swagger UI generation
-  - OpenAPI JSON/YAML export
-  - Interactive API testing
-- **Affects**: API development, documentation, client integration
-- **Benefits**:
-  - Auto-generated API documentation
-  - Interactive API explorer
-  - Schema validation
-  - Standard OpenAPI specification
+**敏感数据加密：** AES-256 存储
+- **版本：** cryptography 库 + Fernet 加密
+- **方案：** 敏感字段（姓名、电话、邮箱）加密后存储到 PostgreSQL
+- **理由：** 中国个人信息保护法要求
+- **影响：** Epic 6 (安全与合规)
 
-#### 4.4.2 Error Handling Standards
+**用户同意管理：** 明确同意机制
+- **方案：** 首次启动显示隐私政策，用户勾选"我同意"方可使用
+- **理由：** GDPR、个人信息保护法要求明确同意
+- **影响：** Epic 1 (首次使用流程), Epic 6 (合规性)
 
-**Decision: Custom Exception Classes + FastAPI Exception Handlers**
-- **Rationale**:
-  - Type-safe exception handling
-  - Consistent error response format
-  - Automatic HTTP status code mapping
-  - Support for error codes and internationalization
-- **Implementation**:
-  ```python
-  class AppError(Exception):
-      def __init__(self, message: str, code: str = "INTERNAL_ERROR"):
-          self.message = message
-          self.code = code
-          super().__init__(message)
-  
-  class ValidationError(AppError):
-      def __init__(self, message: str):
-          super().__init__(message, "VALIDATION_ERROR")
-  
-  class AuthenticationError(AppError):
-      def __init__(self, message: str = "Invalid credentials"):
-          super().__init__(message, "AUTHENTICATION_ERROR")
-  
-  class AuthorizationError(AppError):
-      def __init__(self, message: str = "Insufficient permissions"):
-          super().__init__(message, "AUTHORIZATION_ERROR")
-  
-  class ResourceNotFoundError(AppError):
-      def __init__(self, resource: str):
-          super().__init__(f"{resource} not found", "NOT_FOUND")
-  
-  class ExternalServiceError(AppError):
-      def __init__(self, service: str, message: str):
-          super().__init__(f"{service} error: {message}", "EXTERNAL_SERVICE_ERROR")
-  ```
-- **Affects**: All API endpoints, error responses
-- **Benefits**:
-  - Consistent error format across API
-  - Easy debugging and monitoring
-  - Type-safe error handling
-  - Automatic status code mapping
+**审计日志：** 90 天保留
+- **方案：** PostgreSQL 表 `audit_logs`，每日清理 > 90 天记录
+- **理由：** 数据安全法要求
+- **影响：** Epic 6 (安全与合规)
 
-#### 4.4.3 Service Communication
+### 决策影响分析
 
-**Decision: Direct Function Call (Monolith)**
-- **Rationale**:
-  - Single application (no microservices)
-  - Electron ↔ Python: WebSocket (already decided in ADR-009)
-  - Python internal: Direct function calls (simple, type-safe)
-  - Celery tasks: Redis queue (already decided in ADR-007)
-- **Affects**: Architecture complexity, performance
-- **Benefits**:
-  - Simpler architecture
-  - Type-safe communication
-  - No network overhead
-  - Easier debugging
+**实施顺序：**
+1. 数据架构（PostgreSQL 模型设计）
+2. AI 模型抽象层（8 个提供商）
+3. 浏览器自动化（Playwright Worker Pool）
+4. 前端状态管理（三级视图）
+5. WebSocket 通信（进度推送）
+6. 安全与合规（加密、审计日志）
 
-### 4.5 Frontend Architecture
+**跨组件依赖：**
+- AI 模型层 → 依赖 ← FastAPI（异步调用）
+- Celery → 依赖 ← Playwright（任务执行）
+- WebSocket → 依赖 ← 任务进度事件
+- 前端 → 依赖 ← WebSocket（状态同步）
+- 离线缓存 → 依赖 ← IndexedDB（浏览器本地存储）
 
-#### 4.5.1 Electron-Python Communication
 
-**Decision: WebSocket (from ADR-009)**
-- **Rationale**:
-  - Real-time bidirectional communication
-  - Supports long-lived connections
-  - Suitable for crawler progress streaming
-  - Robust error handling and reconnection
-- **Affects**: Electron main process, Python backend
-- **Benefits**:
-  - Real-time progress updates
-  - Low latency
-  - Event-driven architecture
-  - Automatic reconnection support
+## Implementation Patterns & Consistency Rules
 
-#### 4.5.2 State Management
+### Pattern Categories Defined
 
-**Decision: Lightweight Custom State Management**
-- **Rationale**:
-  - Electron single-page application, low complexity
-  - Avoid Redux/MobX boilerplate
-  - Sufficient for current requirements
-  - Smaller bundle size
-- **Implementation**:
-  ```javascript
-  class AppState {
-    constructor() {
-      this.state = {
-        crawlers: [],
-        templates: [],
-        currentUser: null,
-        activeCrawler: null,
-        notifications: [],
-      };
-      this.listeners = [];
-    }
-    
-    setState(newState) {
-      this.state = { ...this.state, ...newState };
-      this.notify();
-    }
-    
-    subscribe(listener) {
-      this.listeners.push(listener);
-      return () => {
-        this.listeners = this.listeners.filter(l => l !== listener);
-      };
-    }
-    
-    notify() {
-      this.listeners.forEach(listener => listener(this.state));
-    }
+**Critical Conflict Points Identified:** 15 个领域 AI 代理可能做出不同选择
+
+**架构师角色：**
+- **Pragmatic Paul（务实架构师）**：关注实用性和开发效率
+- **Security Sam（安全架构师）**：关注漏洞防护和合规性
+- **Scalability Sara（可扩展性架构师）**：关注未来扩展和性能
+- **Maintainability Maria（可维护性架构师）**：关注长期代码健康
+
+### Naming Patterns
+
+**架构师辩论：数据库命名约定**
+
+- **Paul 观点：** 使用 `snake_case` 最符合 Python 生态和 PEP 8，IDE 自动补全友好
+- **Sam 警告：** 列名使用 `_id` 后缀可能被误认为主键，建议 `pk_` 前缀
+- **Sara 建议：** 索引名 `idx_table_columns` 便于索引命名空间管理
+- **Maria 偏好：** 保持一致性比争论后缀更重要
+
+**决策： snake_case，后缀 `_id` 用于外键**
+
+**理由：** Python 生态标准 + 明确语义区别主键/外键，Sam 的安全担忧可通过文档缓解（主键明确标注）
+
+**Database Naming Conventions:**
+- 表名：snake_case 复数（`data_sources`, `crawl_tasks`）
+- 列名：snake_case（`data_source_id`, `created_at`）
+- 外键：`{referenced_table}_id`（`data_source_id`）
+- 索引：`idx_{table}_{columns}`（`idx_data_sources_url`）
+
+**API 命名约定：**
+
+- **Paul 观点：** `/api/v1/{resource_plural}` 符合 REST 约定
+- **Sam 建议：** 版本号在路径中可能被反向代理缓存，建议 Header `X-API-Version: v1`
+- **Sara 关注：** 保持 URL 简短，`data-sources` vs `data-source-management`
+- **Maria 平衡：** Header 版本控制更灵活，但路径版本更直观
+
+**决策：路径 `/api/v1/{resource_plural}`，Header 版本可选**
+
+**理由：** MVP 阶段优先直观性，后续可扩展 Header 版本
+
+**API Naming Conventions:**
+- REST 端点：`/api/v1/{resource_plural}`（`/api/v1/data-sources`）
+- 路由参数：`{resource}_id`（`/{data_source_id}`）
+- 查询参数：snake_case（`?status=active&page=1`）
+- 头部：`X-Custom-Header`（`X-Request-ID`）
+
+**代码命名约定：**
+
+- **Paul 观点：** Python PEP 8，Vue.js 驼峰/帕斯卡各自遵守社区规范
+- **Sara 关注：** 文件名一致性（kebab-case）便于跨平台
+- **Maria 要求：** 组件和函数命名必须对应（UserProfile.vue ← getUserProfile）
+
+**决策：Python snake_case，Vue.js PascalCase 组件/ camelCase 变量，文件名 kebab-case**
+
+**Code Naming Conventions:**
+- Python：snake_case 函数/变量，PascalCase 类
+- Vue.js：PascalCase 组件（UserProfile.vue），camelCase 变量
+- 文件名：kebab-case（user-profile.vue, ai-service.py）
+
+### Structure Patterns
+
+**项目组织辩论：**
+
+- **Paul 观点：** 按功能组织（feature-based）更符合领域驱动设计
+- **Sam 建议：** 按类型组织（type-based）便于快速定位文件
+- **Sara 关注：** 混合模式（核心共享 + 功能隔离）
+- **Maria 偏好：** PRD 已明确三级界面策略，按功能组织更匹配
+
+**决策：按功能组织，共享组件单独管理**
+
+**理由：** 领域驱动 + PRD 三级视图需求，类型组织可通过搜索补偿
+
+**Project Organization:**
+```
+backend/
+├── app/
+│   ├── api/          # FastAPI 路由
+│   ├── models/       # SQLAlchemy 模型
+│   ├── schemas/      # Pydantic schemas
+│   ├── services/     # 业务逻辑
+│   ├── core/         # 配置、依赖
+│   └── tasks/        # Celery 任务
+├── tests/
+└── alembic/          # 数据库迁移
+
+frontend/
+├── src/
+│   ├── components/   # Vue 组件（按功能分组）
+│   ├── composables/  # Composition API hooks
+│   ├── stores/       # Pinia stores
+│   ├── api/          # API 调用
+│   └── utils/        # 工具函数
+└── tests/
+```
+
+### Format Patterns
+
+**API 响应格式辩论：**
+
+- **Paul 观点：** `{"data": ..., "error": ...}` 统一结构，客户端易于解析
+- **Sam 警告：** 错误堆栈暴露可能泄露内部结构，区分用户/系统错误
+- **Sara 关注：** 成功响应 `message` 字段可能被忽略，保持简洁
+- **Maria 要求：** HTTP 状态码 + 业务错误码双重验证
+
+**决策：统一包装器，系统错误不暴露堆栈**
+
+**API Response Formats:**
+```json
+// 成功响应
+{
+  "data": { ... },
+  "message": "Success"
+}
+
+// 错误响应
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Invalid input",
+    "details": { ... }
   }
-  
-  const appState = new AppState();
-  ```
-- **Affects**: Electron renderer process, UI components
-- **Benefits**:
-  - Simple and maintainable
-  - No additional dependencies
-  - Performance-friendly
-  - Easy to understand
+}
+```
 
-#### 4.5.3 UI Framework Selection
+**数据交换格式：**
 
-**Decision: Vanilla HTML/CSS/JavaScript + Optional Libraries**
-- **Core**: Native browser APIs
-- **Optional Libraries**:
-  - Tailwind CSS (utility-first CSS framework)
-  - Chart.js (data visualization)
-  - Sortable.js (drag-and-drop sorting)
-  - Marked.js (Markdown rendering)
-- **Rationale**:
-  - Electron WebView provides full browser capabilities
-  - Avoid framework overhead (React/Vue not needed)
-  - Sufficient for desktop application requirements
-  - Better performance for simple UI
-- **Affects**: Electron renderer process, UI development
-- **Benefits**:
-  - Minimal bundle size
-  - Faster startup time
-  - Simpler development workflow
-  - No build step complexity
+- **Paul 观点：** 后端 snake_case，前端 camelCase，后端统一最安全
+- **Sam 建议：** 布尔用 `true/false`，`1/0` 可能被某些库误解析
+- **Sara 关注：** null vs 空字符串必须一致
+- **Maria 要求：** 日期 ISO 8601 标准避免时区混乱
 
-#### 4.5.4 Build and Deployment
+**决策：后端 snake_case，前端自动转换；布尔 true/false；null 统一处理；日期 ISO 8601**
 
-**Decision: Electron Builder**
-- **Version**: 24.0+
-- **Rationale**:
-  - Industry standard for Electron packaging
-  - Multi-platform support (Windows, macOS, Linux)
-  - Automatic code signing and notarization (macOS)
-  - NSIS installer support (Windows)
-  - Auto-update support
-- **Configuration**:
-  ```json
-  {
-    "build": {
-      "appId": "com.ai-crawler.app",
-      "productName": "AI Crawler",
-      "win": {
-        "target": "nsis",
-        "icon": "build/icon.ico"
-      },
-      "mac": {
-        "target": "dmg",
-        "icon": "build/icon.icns",
-        "hardenedRuntime": true,
-        "gatekeeperAssess": false
-      },
-      "linux": {
-        "target": "AppImage",
-        "icon": "build/icon.png"
-      }
-    }
+**Data Exchange Formats:**
+- JSON 字段：snake_case（后端），前端自动转换 camelCase
+- 布尔：true/false
+- Null：null
+- 日期：ISO 8601（`2026-04-26T10:00:00Z`）
+
+### Communication Patterns
+
+**WebSocket 事件辩论：**
+
+- **Paul 观点：** `crawl_progress`, `task_completed` 简洁易懂
+- **Sam 警告：** 事件需版本控制，客户端兼容性
+- **Sara 关注：** 事件类型枚举避免拼写错误
+- **Maria 偏好：** 后端枚举 + 前端 TypeScript 类型检查
+
+**决策：事件 snake_case，枚举类型定义**
+
+**WebSocket Events:**
+```json
+// 事件命名：snake_case
+{
+  "event": "crawl_progress",
+  "data": {
+    "task_id": "uuid",
+    "progress": 75,
+    "current_url": "..."
   }
-  ```
-- **Affects**: Packaging, distribution, updates
-- **Benefits**:
-  - Cross-platform builds
-  - Automatic code signing
-  - Professional installers
-  - Easy auto-update integration
-
-### 4.6 Infrastructure & Deployment
-
-#### 4.6.1 Configuration Management
-
-**Decision: python-dotenv + Pydantic Settings**
-- **Implementation**:
-  ```python
-  from pydantic_settings import BaseSettings
-  
-  class Settings(BaseSettings):
-    # Database
-    DATABASE_URL: str
-    REDIS_URL: str
-    
-    # AI Providers
-    OLLAMA_URL: str = "http://localhost:11434"
-    OPENAI_API_KEY: str = ""
-    ANTHROPIC_API_KEY: str = ""
-    
-    # Security
-    JWT_SECRET_KEY: str
-    JWT_ALGORITHM: str = "HS256"
-    JWT_EXPIRE_MINUTES: int = 30
-    
-    # Application
-    APP_NAME: str = "AI Crawler"
-    DEBUG: bool = False
-    LOG_LEVEL: str = "INFO"
-    
-    # Celery
-    CELERY_BROKER_URL: str
-    CELERY_RESULT_BACKEND: str
-    
-    class Config:
-      env_file = ".env"
-  
-  settings = Settings()
-  ```
-- **Affects**: All application configuration
-- **Benefits**:
-  - Type-safe configuration
-  - Environment variable validation
-  - Development/production separation
-  - IDE autocomplete support
-
-#### 4.6.2 Logging System
-
-**Decision: structlog + Python logging**
-- **Implementation**:
-  ```python
-  import structlog
-  
-  # Configure struct
-log
-  structlog.configure(
-      processors=[
-          structlog.processors.TimeStamper(fmt="iso"),
-          structlog.processors.StackInfoRenderer(),
-          structlog.processors.format_exc_info,
-          structlog.process.processors.JSONRenderer()  # Production
-          # structlog.dev.ConsoleRenderer()  # Development
-      ],
-      context_class=dict,
-      logger_factory=structlog.PrintLoggerFactory(),
-  )
-  
-  # Usage
-  log = structlog.get_logger()
-  log.info("user_login", user_id=123, ip="192.168.1.1")
-  ```
-- **Affects**: All application logging
-- **Benefits**:
-  - Structured JSON logs (production)
-  - Human-readable logs (development)
-  - Easy ELK stack integration
-  - Context-aware logging
-
-#### 4.6.3 Monitoring & Observability
-
-**Decision: Basic Monitoring + Health Checks**
-- **Components**:
-  ```python
-  from fastapi import FastAPI
-  from prometheus_fastapi_instrumentator import Instrumentator
-  
-  app = FastAPI()
-  
-  # Prometheus metrics
-  Instrumentator().instrument(app).expose(app)
-  
-  # Health check endpoint
-  @app.get("/health")
-  async def health_check():
-      return {
-          "status": "healthy",
-          "database": check_database(),
-          "redis": check_redis(),
-          "celery": check_celery_workers(),
-      }
-  ```
-- **Components**:
-  - Prometheus metrics (request rate, latency, errors)
-  - Health check endpoints (database, Redis, Celery)
-  - Celery Flower for task monitoring
-  - Optional Sentry for error tracking (post-MVP)
-- **Affects**: Operations, debugging, performance monitoring
-- **Benefits**:
-  - Real-time metrics
-  - Quick health status
-  - Task monitoring
-  - Issue tracking
-
-#### 4.6.4 Testing Framework
-
-**Decision: pytest + pytest-asyncio + pytest-cov**
-- **Configuration** (pyproject.toml):
-  ```toml
-  [tool.pytest.ini_options]
-  asyncio_mode = "auto"
-  testpaths = ["tests"]
-  addopts = "--cov(cov=app --cov-report=html --cov-report=term"
-  ```
-- **Example test**:
-  ```python
-  import pytest
-  from fastapi.testclient import TestClient
-  from app.main import app
-  
-  @pytest.fixture
-  def client():
-      return TestClient(app)
-  
-  @pytest.fixture
-  def db_session():
-      # Setup test database
-      ...
-      yield session
-      # Cleanup
-      ...
-  
-  def test_create_crawler(client, db_session):
-      response = client.post(
-          "/api/crawlers",
-          json={"name": "Test Crawler", "url": "https://example.com"}
-      )
-      assert response.status_code == 201
-      assert response.json()["name"] == "Test Crawler"
-  ```
-- **Affects**: Code quality, confidence in refactoring
-- **Benefits**:
-  - Async test support
-  - Coverage reporting
-  - Fixture system
-  - Rich plugin ecosystem
-
-#### 4.6.5 Code Quality Tools
-
-**Decision: ruff + mypy + pre-commit**
-- **ruff configuration** (pyproject.toml):
-  ```toml
-  [tool.ruff]
-  line-length = 88
-  select = ["E", "F", "I", "N", "W", "B", "C4", "UP"]
-  target-version = "py310"
-  
-  [tool.ruff.format]
-  indent-style = "space"
-  quote-style = "double"
-  ```
-- **mypy configuration**:
-  ```toml
-  [tool.mypy]
-  python_version = "3.10"
-  strict = true
-  warn_return_any = true
-  warn_unused_configs = true
-  disallow_untyped_defs = true
-  ```
-- **pre-commit configuration** (.pre-commit-config.yaml):
-  ```yaml
-  repos:
-    - repo: https://github.com/astral-sh/ruff-pre-commit
-      rev: v0.1.9
-      hooks:
-        - id: ruff
-        - id: ruff-format
-    - repo: https://github.com/pre-commit/mirrors-mypy
-      rev: v1.8.0
-      hooks:
-        - id: mypy
-          additional_dependencies: [pydantic, fastapi]
-  ```
-- **Affects**: Code consistency, type safety, team collaboration
-- **Benefits**:
-  - Fast linting (10-100x faster than flake8)
-  - Automatic formatting
-  - Type checking
-  - Pre-commit hooks
-
-### 4.7 Decision Impact Analysis
-
-#### 4.7.1 Implementation Sequence
-
-Based on dependencies and criticality:
-
-1. **Phase 1: Foundation**
-   - Configuration management (python-dotenv + Pydantic)
-   - Logging system (structlog)
-   - Database setup (PostgreSQL + Redis)
-   - Data modeling (SQLAlchemy)
-   - Migration tooling (Alembic)
-
-2. **Phase 2: Core Services**
-   - FastAPI application structure
-   - Authentication system (Argon2id + JWT)
-   - Error handling framework
-   - API documentation (auto OpenAPI)
-
-3. **Phase 3: Business Logic**
-   - AI provider abstraction layer
-   - Playwright browser automation
-   - Celery task orchestration
-   - WebSocket communication
-   - Caching layer (Redis)
-
-4. **Phase 4: Frontend**
-   - Electron setup
-   - State management
-   - UI components
-   - WebSocket client
-
-5. **Phase 5: Quality & Operations**
-   - Testing framework (pytest)
-   - Code quality tools (ruff + mypy)
-   - Monitoring (Prometheus + health checks)
-   - Security middleware (rate limiting, CORS)
-
-#### 4.7.2 Cross-Component Dependencies
-
-**Data Flow:**
-```
-User (Electron) 
-  → WebSocket → Python Backend (FastAPI)
-    → Celery Tasks
-      → Playwright (Browser Automation)
-        → AI Provider (Local/Cloud)
-          → Results → Celery
-            → FastAPI → WebSocket → UI
-```
-
-**Key Dependencies:**
-- **Configuration** → All components (foundational)
-- **Database** → Data models, authentication, caching
-- **Celery** → Task execution, background jobs
-- **Playwright** → Browser automation, data extraction
-- **AI Providers** → Content analysis, data interpretation
-- **WebSocket** → Real-time communication, progress updates
-- **Electron** → Desktop UI, user interaction
-
-#### 4.7.3 Risk Mitigation
-
-**Technical Risks:**
-
-1. **Playwright Memory Leaks**
-   - **Risk**: Browser instances not properly cleaned up
-   - **Mitigation**: Worker Pool pattern, automatic cleanup, memory monitoring
-
-2. **AI Provider Failures**
-   - **Risk**: Outages, rate limits, cost overruns
-   - **Mitigation**: Multi-provider support, automatic fallback, cost tracking
-
-3. **Celery Task Failures**
-   - **Risk**: Task queue deadlock, worker crashes
-   - **Mitigation**: Retry logic, dead letter queue, health checks
-
-4. **Database Connection Pool Exhaustion**
-   - **Risk**: Too many concurrent connections
-   - **Mitigation**: Connection pooling, query optimization, caching
-
-5. **WebSocket Connection Drops**
-   - **Risk**: Lost progress updates, poor UX
-   - **Mitigation**: Automatic reconnection, message queue, offline handling
-
-**Operational Risks:**
-
-1. **Deployment Complexity**
-   - **Risk**: Hard to install and configure
-   - **Mitigation**: Docker support, automated setup, clear documentation
-
-2. **Resource Requirements**
-   - **Risk**: High memory/CPU usage (Playwright + AI)
-   - **Mitigation**: Resource monitoring, configuration limits, user guidance
-
-3. **Security Vulnerabilities**
-   - **Risk**: API keys exposed, data breaches
-   - **Mitigation**: Encryption, secure storage, audit logging, RBAC
-
-4. **Compliance Violations**
-   - **Risk**: GDPR/CCPA/China Law violations
-   - **Mitigation**: Local storage, data minimization, user consent, audit trails
-
-#### 4.7.4 Cost Implications
-
-**Development Costs:**
-- Development time: ~6-12 months (MVP to full implementation)
-- Learning curve: Medium (Python ecosystem, AI integration)
-- Maintenance: Ongoing (AI model updates, dependency management)
-
-**Infrastructure Costs:**
-- Local deployment: Free (user's machine)
-- Cloud AI providers: Pay-per-use (OpenAI, Anthropic, etc.)
-- Monitoring/alerting: Optional (Sentry, Datadog)
-
-**Total Cost of Ownership (TCO):**
-- Development: 6-12 months (2-4 FTE)
-- Infrastructure: $0 (local) + variable (cloud AI)
-- Maintenance: 20% of development time per year
-- User acquisition: Free (open source/community)
-
-#### 4.7.5 Success Criteria
-
-**Technical Success:**
-- ✅ All critical decisions implemented and tested
-- ✅ API response time < 200ms (95th percentile)
-- ✅ Page analysis < 8 seconds (95th percentile)
-- ✅ 99.9% uptime (NFR6)
-- ✅ Data accuracy: 70-80% (MVP), 90-95% (post-MVP)
-
-**User Experience Success:**
-- ✅ Zero-code experience achieved
-- ✅ Real-time progress updates
-- ✅ Intuitive UI (like search engine)
-- ✅ Multi-platform support (Windows, macOS, Linux)
-- ✅ Easy installation and setup
-
-**Business Success:**
-- ✅ Reduced maintenance time by 70% vs traditional crawlers
-- ✅ Automatic website structure adaptation within 48-72 hours
-- ✅ Community adoption and template sharing
-- ✅ Integration with data warehouses (Snowflake, BigQuery, Redshift)
-
----
-
-**Step 4 完成！所有核心架构决策已记录。**
-
-下一步：实现模式定义
----
-
-## 5. Implementation Patterns & Consistency Rules
-
-### 5.1 Pattern Categories Defined
-
-**Critical Conflict Points Identified:**
-27 areas where AI agents could make different choices
-
-### 5.2 Naming Patterns
-
-#### 5.2.1 Database Naming Conventions
-
-**Rules:**
-- **Table names**: Plural, snake_case (e.g., `users`, `crawlers`, `templates`)
-- **Column names**: snake_case (e.g., `user_id`, `created_at`, `is_active`)
-- **Primary keys**: `{table_name}_id` (e.g., `user_id`, `crawler_id`)
-- **Foreign keys**: `{referenced_table}_id` (e.g., `user_id`, `template_id`)
-- **Indexes**: `idx_{table_name}_{column_name}` (e.g., `idx_users_email`)
-- **Unique constraints**: `uq_{table_name}_{column_name}` (e.g., `uq_users_email`)
-- **Timestamps**: `created_at`, `updated_at` (always UTC)
-
-**Examples:**
-```python
-# SQLAlchemy model example
-class Crawler(Base):
-    __tablename__ = "crawlers"
-    
-    crawler_id = Column(Integer, primary_key=True)
-    name = Column(String(100), nullable=False)
-    url = Column(String(500), nullable=False)
-    user_id = Column(Integer, ForeignKey("users.user_id"))
-    is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, onupdate=datetime.utcnow)
-    
-    # Indexes
-    __table_args__ = (
-        Index("idx_crawlers_user_id", "user_id"),
-        UniqueConstraint("name", "user_id", name="uq_crawlers_name_user"),
-    )
-```
-
-#### 5.2.2 API Naming Conventions
-
-**Rules:**
-- **REST endpoints**: Plural, kebab-case, with `/api` prefix (e.g., `/api/users`, `/api/crawlers`)
-- **Route parameters**: `{id}` format (e.g., `/api/crawlers/{crawler_id}`)
-- **Query parameters**: snake_case (e.g., `?user_id=123&is_active=true`)
-- **Header naming**: `X-Custom-Header` format (e.g., `X-Request-ID`, `X-API-Key`)
-- **HTTP methods**: Standard REST (GET, POST, PUT, DELETE, PATCH)
-
-**Examples:**
-```python
-# FastAPI router examples
-@app.get("/api/crawlers")
-async def get_crawlers(user_id: int = Query(...)):
-    ...
-
-@app.get("/api/crawlers/{crawler_id}")
-async def get_crawler(crawler_id: int):
-    ...
-
-@app.post("/api/crawlers")
-async def create_crawler(crawler: CrawlerCreate):
-    ...
-
-@app.put("/api/crawlers/{crawler_id}")
-async def update_crawler(crawler_id: int, crawler: CrawlerUpdate):
-    ...
-```
-
-#### 5.2.3 Code Naming Conventions
-
-**Rules:**
-- **Python classes**: PascalCase (e.g., `CrawlerService`, `UserRepository`)
-- **Python functions/methods**: snake_case (e.g., `get_crawler`, `create_user`)
-- **Python variables**: snake_case (e.g., `crawler_id`, `is_active`)
-- **Constants**: UPPER_SNAKE_CASE (e.g., `MAX_CONCURRENT_TASKS`, `DEFAULT_TIMEOUT`)
-- **Private members**: Leading underscore (e.g., `_internal_method`, `_private_var`)
-- **Async functions**: snake_case with `async` keyword (e.g., `async def fetch_data()`)
-
-**Examples:**
-```python
-# Class example
-class CrawlerService:
-    MAX_CONCURRENT_TASKS = 10
-    DEFAULT_TIMEOUT = 30
-    
-    def __init__(self, db: Session):
-        self._db = db
-    
-    async def get_crawler(self, crawler_id: int) -> Crawler:
-        return await self._db.query(Crawler).filter_by(
-            crawler_id=crawler_id
-        ).first()
-    
-    async def create_crawler(self, crawler_data: CrawlerCreate) -> Crawler:
-        crawler = Crawler(**crawler_data.dict())
-        self._db.add(crawler)
-        await self._db.commit()
-        return crawler
-```
-
-#### 5.2.4 WebSocket Event Naming Conventions
-
-**Rules:**
-- **Event names**: kebab-case, descriptive (e.g., `crawler.started`, `task.progress`, `error.occurred`)
-- **Event payload**: snake_case keys (e.g., `{"crawler_id": 123, "status": "running"}`)
-- **Event directions**: `client_to_server` and `server_to_client` prefixes in documentation
-
-**Examples:**
-```python
-# WebSocket event examples
-WEBSOCKET_EVENTS = {
-    # Client to Server
-    "crawlers.list": {"description": "Request list of crawlers"},
-    "crawlers.create": {"description": "Create new crawler"},
-    "crawlers.start": {"description": "Start crawler execution"},
-    
-    # Server to Client
-    "crawler.started": {"description": "Crawler started notification"},
-    "task.progress": {"description": "Task progress update"},
-    "crawler.completed": {"description": "Crawler completion notification"},
-    "error.occurred": {"description": "Error notification"},
-}
-
-# Event payload structure
-{
-    "event": "task.progress",
-    "payload": {
-        "task_id": 123,
-        "crawler_id": 456,
-        "progress": 45.5,  # 0-100
-        "message": "Processing page 10/22",
-        "timestamp": "2025-01-15T10:30:00Z"
-    }
 }
 ```
 
-#### 5.2.5 Celery Task Naming Conventions
+**状态管理辩论：**
 
-**Rules:**
-- **Task names**: snake_case, hierarchical (e.g., `crawler.execute`, `ai.analyze_page`)
-- **Task parameters**: snake_case, type-annotated
-- **Task results**: Consistent structure (status, result, error)
+- **Paul 观点：** Pinia 不可变更新符合 Vue 3 最佳实践
+- **Sam 建议：** 全局 loading 状态更统一，避免散布各组件
+- **Sara 关注：** Store 分离（crawl、ui、user）避免单一 Store 过大
+- **Maria 要求：** 三级视图对应不同 Store 结构
 
-**Examples:**
-```python
-# Celery task examples
-@celery_app.task(name="crawler.execute")
-def execute_crawler_task(crawler_id: int, options: dict = None):
-    """Execute a crawler task"""
-    try:
-        crawler = get_crawler(crawler_id)
-        result = run_crawler(crawler, options or {})
-        return {"status": "success", "result": result}
-    except Exception as e:
-        return {"status": "error", "error": str(e)}
+**决策：Pinia 不可变更新，按视图分离 Store**
 
-@celery_app.task(name="ai.analyze_page")
-def analyze_page_task(page_html: str, url: str, model: str):
-    """Analyze page content using AI"""
-    try:
-        analysis = ai_service.analyze(page_html, url, model)
-        return {"status": "success", "result": analysis}
-    except Exception as e:
-        return {"status": "error", "error": str(e)}
-```
-
-#### 5.2.6 Logging Format Conventions
-
-**Rules:**
-- **Log levels**: DEBUG, INFO, WARNING, ERROR, CRITICAL
-- **Log messages**: Lowercase, present tense (e.g., "user logged in", "task started")
-- **Structured logging**: Use key-value pairs for context
-
-**Examples:**
-```python
-import structlog
-
-log = structlog.get_logger()
-
-# Good examples
-log.info("user_logged_in", user_id=123, ip="192.168.1.1")
-log.info("crawler_started", crawler_id=456, url="https://example.com")
-log.warning("retry_attempt", attempt=3, max_attempts=5, task_id=789)
-log.error("api_call_failed", provider="openai", error_code=429, retry_after=60)
-log.critical("database_connection_lost", host="db.example.com")
-
-# Bad examples (avoid)
-log.info("User logged in with ID 123")  # Not structured
-log.info(f"User {user_id} logged in")  # No structured fields
-```
-
-### 5.3 Structure Patterns
-
-#### 5.3.1 Project Organization
-
-**Directory Structure:**
-```
-ai-crawler/
-├── app/                          # Main application code
-│   ├── __init__.py
-│   ├── main.py                    # FastAPI application entry point
-│   ├── config.py                  # Configuration (Pydantic)
-│   ├── api/                      # API routes
-│   │   ├── __init__.py
-│   │   ├── crawlers.py
-│   │   ├── users.py
-│   │   └── templates.py
-│   ├── models/                    # SQLAlchemy models
-│   │   ├── __init__.py
-│   │   ├── user.py
-│   │   ├── crawler.py
-│   │   └── template.py
-│   ├── schemas/                   # Pydantic schemas
-│   │   ├── __init__.py
-│   │   ├── user.py
-│   │   ├── crawler.py
-│   │   └── common.py
-│   ├── services/                  # Business logic
-│   │   ├── __init__.py
-│   │   ├── crawler_service.py
-│   │   ├── ai_service.py
-│   │   └── auth_service.py
-│   ├── repositories/              # Data access layer
-│   │   ├── __init__.py
-│   │   ├── base.py
-│   │   └── crawler_repository.py
-│   ├── tasks/                    # Celery tasks
-│   │   ├── __init__.py
-│   │   ├── celery_app.py
-│   │   ├── crawler_tasks.py
-│   │   └── ai_tasks.py
-│   ├── core/                     # Core functionality
-│   │   ├── __init__.py
-│   │   ├── security.py
-│   │   ├── logging.py
-│   │   └── websocket.py
-│   └── utils/                    # Utility functions
-│       ├── __init__.py
-│       └── helpers.py
-├── electron/                     # Electron frontend
-│   ├── main.js                   # Electron main process
-│   ├── preload.js                # Preload script
-│   ├── renderer/                 # Renderer process (UI)
-│   │   ├── index.html
-│   │   ├── app.js
-│   │   ├── styles/
-│   │   └── components/
-│   └── resources/               # Static assets
-├── tests/                       # Test files (mirrors app/ structure)
-│   ├── __init__.py
-│   ├── conftest.py              # pytest fixtures
-│   ├── test_api/
-│   ├── test_services/
-│   └── test_tasks/
-├── migrations/                  # Alembic migrations
-├── docs/                       # Documentation
-├── scripts/                     # Utility scripts
-├── .env.example                # Environment variables template
-├── .env                        # Local environment (gitignored)
-├── pyproject.toml               # Python project config
-├── alembic.ini                 # Alembic config
-├── requirements.txt             # Python dependencies
-└── README.md
-```
-
-**Rules:**
-- **Test organization**: Mirror `app/` structure in `tests/` directory
-- **Component organization**: By feature/domain (e.g., `crawlers/`, `users/`)
-- **Shared utilities**: Centralized in `app/utils/` and `app/core/`
-- **Configuration**: Single `config.py` using Pydantic
-- **Separation of concerns**:
-  - `api/`: FastAPI routes (thin controllers)
-  - `services/`: Business logic
-  - `repositories/`: Data access
-  - `schemas/`: Request/response validation
-
-#### 5.3.2 File Structure Patterns
-
-**Configuration Files:**
-- **Environment config**: `.env` (gitignored), `.env.example` (template)
-- **Python config**: `app/config.py` (Pydantic settings)
-- **Celery config**: `app/tasks/celery_app.py`
-- **Alembic config**: `alembic.ini` (root)
-
-**Static Assets:**
-- **Frontend assets**: `electron/resources/`
-- **Images**: `electron/resources/images/`
-- **Icons**: `electron/resources/icons/`
-- **Styles**: `electron/renderer/styles/`
-
-**Documentation:**
-- **API docs**: Auto-generated by FastAPI at `/docs`
-- **Architecture docs**: `docs/architecture.md`
-- **User guides**: `docs/guides/`
-- **Contributing**: `CONTRIBUTING.md`
-
-### 5.4 Format Patterns
-
-#### 5.4.1 API Response Formats
-
-**Standard API Response Structure:**
-```python
-# Success response
-{
-    "data": {
-        # Actual response data
-    },
-    "meta": {
-        "timestamp": "2025-01-15T10:30:00Z",
-        "request_id": "550e8400-e29b-41d4-a716-446655440100"
-    }
-}
-
-# List response with pagination
-{
-    "data": [
-        # Array of items
-    ],
-    "meta": {
-        "total": 100,
-        "page": 1,
-        "per_page": 20,
-        "has_next": true,
-        "has_prev": false
-    }
-}
-
-# Create response
-{
-    "data": {
-        "crawler_id": 123,
-        "name": "Test Crawler",
-        ...
-    },
-    "meta": {
-        "timestamp": "2025-01-15T10:30:00Z"
-    }
-}
-```
-
-#### 5.4.2 Error Response Formats
-
-**Standard Error Response Structure:**
-```python
-# Error response
-{
-    "error": {
-        "code": "VALIDATION_ERROR",
-        "message": "Invalid input data",
-        "details": [
-            {
-                "field": "url",
-                "message": "Invalid URL format"
-            }
-        ],
-        "request_id": "550e8400-e29b-41d4-a716-446655440100"
-    },
-    "meta": {
-        "timestamp": "2025-01-15T10:30:00Z"
-    }
-}
-
-# Not found response
-{
-    "error": {
-        "code": "NOT_FOUND",
-        "message": "Crawler not found",
-        "resource_id": "123"
-    },
-    "meta": {
-        "timestamp": "2025-01-15T10:30:00Z"
-    }
-}
-```
-
-#### 5.4.3 Data Exchange Formats
-
-**JSON Field Naming:**
-- **Python ↔ JSON**: snake_case (consistent with Python naming)
-- **Example**: `{"user_id": 123, "created_at": "2025-01-15T10:30:00Z"}`
-
-**Date/Time Formats:**
-- **API dates**: ISO 8601 strings with timezone (e.g., `"2025-01-15T10:30:00Z"`)
-- **Database dates**: UTC datetime objects
-- **UI dates**: Localized based on user settings
-
-**Boolean Representations:**
-- **JSON**: `true` or `false` (lowercase)
-- **Database**: Boolean (true/false)
-- **API query params**: `true` or `false` (string)
-
-**Null Handling:**
-- **Missing fields**: Omit from JSON (not `null`)
-- **Explicit null**: Use `null` in JSON
-- **Database**: NULL for missing values
-
-**Array vs Object:**
-- **Single items**: Always return in array for consistency
-- **Empty collections**: `[]` (empty array), not `null`
-
-### 5.5 Communication Patterns
-
-#### 5.5.1 WebSocket Message Patterns
-
-**Message Structure:**
+**State Management (Pinia):**
 ```javascript
-// Client to Server
-{
-    "type": "crawlers.list",
-    "payload": {
-        "filters": {
-            "is_active": true
-        },
-        "page": 1,
-        "per_page": 20
-    },
-    "request_id": "550e8400-e29b-41d4-a716-446655440100"
-}
-
-// Server to Client (response)
-{
-    "type": "crawlers.list.response",
-    "payload": {
-        "data": [...],
-        "meta": {...}
-    },
-    "request_id": "550e8400-e29b-41d4-a716-446655440100"
-}
-
-// Server to Client (event)
-{
-    "type": "task.progress",
-    "payload": {
-        "task_id": 123,
-        "progress": 45.5,
-        "message": "Processing page 10/22"
-    }
-}
+// Store 命名：PascalCase
+// Actions：camelCase
+// State：camelCase
+export const useCrawlStore = defineStore('crawl', {
+  state: () => ({
+    activeTasks: [],
+    history: []
+  }),
+  actions: {
+    async startTask(task) { ... }
+  }
+})
 ```
 
-#### 5.5.2 State Management Patterns
+### Process Patterns
 
-**State Updates:**
-```javascript
-// Immutable state updates
-class AppState {
-    constructor() {
-        this.state = {
-            crawlers: [],
-            activeCrawler: null,
-            notifications: []
-        };
-    }
-    
-    // Good: Immutable update
-    updateCrawler(crawlerId, updates) {
-        this.setState({
-            crawlers: this.state.crawlers.map(c => 
-                c.crawler_id === crawlerId 
-                    ? { ...c, ...updates } 
-                    : c
-            )
-        });
-    }
-    
-    // Bad: Direct mutation (avoid)
-    updateCrawlerBad(crawlerId, updates) {
-        const crawler = this.state.crawlers.find(c => c.crawler_id === crawlerId);
-        Object.assign(crawler, updates);  // Don't do this
-        this.notify();
-    }
-}
-```
+**错误处理辩论：**
 
-#### 5.5.3 Celery Task Patterns
+- **Paul 观点：** FastAPI `app.exception_handler` 统一处理
+- **Sam 警告：** 生产环境不返回详细堆栈
+- **Sara 关注：** 错误日志和用户消息分离
+- **Maria 要求：** HTTP 状态码语义正确（400 vs 422）
 
-**Task Results:**
+**决策：全局异常处理 + 环境区分日志**
+
+**Error Handling:**
+- Python：统一异常处理（`app.exception_handler`）
+- 前端：全局错误拦截（`axios.interceptors`）
+- 用户友好消息（非技术细节）
+
+**加载状态辩论：**
+
+- **Paul 观点：** `isLoading` + `isSaving` + `isDeleting` 明确语义
+- **Sam 建议：** 全局 loading overlay 防止重复 UI
+- **Sara 关注：** 局部 loading 提升感知响应速度
+- **Maria 平衡：** 全局防误触 + 局部优化体验
+
+**决策：明确语义的局部状态，重大操作全局 overlay**
+
+**Loading States:**
+- 前端：`isLoading` + `isSaving` + `isDeleting`
+- 本地状态，不持久化
+
+### Extended Architecture Specifications
+
+**WebSocket 事件版本控制：**
+- **Header 格式：** `X-Event-Version: v1`
+- **版本策略：** MVP 使用 v1，向后兼容到 v1.x
+- **破坏性变更：** 需要 v2 标识，客户端需支持版本检测
+- **实施位置：** `backend/app/api/v1/websocket/__init__.py`
+
 ```python
-# Standard task result structure
-{
-    "status": "success",  # or "error"
-    "result": {           # Only if success
-        "crawler_id": 123,
-        "pages_crawled": 50,
-        "data_extracted": [...]
-    },
-    "error": None,        # Only if error
-    "metadata": {         # Always
-        "task_id": "550e8400-e29b-41d4-a716-446655440100",
-        "started_at": "2025-01-15T10:30:00Z",
-        "completed_at": "2025-01-15T10:35:00Z",
-        "duration_seconds": 300
-    }
-}
+# WebSocket 连接示例
+ws = new WebSocket(`ws://localhost:8000/ws/progress/${taskId}`)
+ws.addEventListener('message', (event) => {
+  const data = JSON.parse(event.data)
+  if (data.version !== 'v1') {
+    console.warn('Incompatible event version:', data.version)
+  }
+})
 ```
 
-### 5.6 Process Patterns
+**AI 提供商配置迁移策略：**
+- **配置存储：** 系统密钥环（加密）
+- **版本字段：** `ai_providers.config_version`
+- **迁移检查：** 启动时检测版本不匹配
+- **回滚机制：** 保留旧配置备份（`.bak` 后缀）
+- **实施位置：** `backend/app/core/security.py`
 
-#### 5.6.1 Error Handling Patterns
-
-**Global Error Handler:**
 ```python
-# app/core/exceptions.py
-class AppError(Exception):
-    def __init__(self, message: str, code: str = "INTERNAL_ERROR"):
-        self.message = message
+# 配置迁移流程
+def migrate_config(old_version: str, new_version: str) -> None:
+    try:
+        # 尝试迁移
+        migrated = migration_handlers[old_version](load_config())
+        save_config(migrated)
+        backup_config(old_version)
+    except Exception as e:
+        # 迁移失败，使用备份
+        restore_config(old_version)
+        raise ConfigMigrationError(f"Migration failed: {e}")
+```
+
+**错误码标准化表：**
+- **实施位置：** `backend/app/core/errors.py`
+
+```python
+from enum import IntEnum
+
+class ErrorCode(IntEnum):
+    """统一错误码体系 (4xxxx: 客户端错误, 5xxxx: 服务端错误)"""
+    
+    # 通用错误 40000-40099
+    INVALID_INPUT = 40001
+    VALIDATION_ERROR = 40002
+    MISSING_REQUIRED_FIELD = 40003
+    UNAUTHORIZED = 40004
+    FORBIDDEN = 40005
+    
+    # AI 相关错误 50000-50099
+    AI_TIMEOUT = 50001
+    AI_PROVIDER_ERROR = 50002
+    AI_RATE_LIMITED = 50003
+    AI_INVALID_RESPONSE = 50004
+    
+    # 爬虫相关错误 50100-50199
+    BROWSER_CRASH = 50101
+    PAGE_LOAD_TIMEOUT = 50102
+    ROBOTS_TXT_BLOCKED = 50103
+    ANTI_CRAWLER_DETECTED = 50104
+    
+    # 数据库错误 50200-50299
+    DATABASE_CONNECTION_FAILED = 50201
+    DATA_INTEGRITY_ERROR = 50202
+    QUERY_TIMEOUT = 50203
+
+class APIError(Exception):
+    def __init__(self, code: ErrorCode, message: str, details: dict = None):
         self.code = code
-        super().__init__(message)
-
-# Global error handler in FastAPI
-@app.exception_handler(AppError)
-async def app_error_handler(request: Request, exc: AppError):
-    return JSONResponse(
-        status_code=400,
-        content={
-            "error": {
-                "code": exc.code,
-                "message": exc.message,
-                "request_id": request.state.request_id
-            },
-            "meta": {
-                "timestamp": datetime.utcnow().isoformat() + "Z"
-            }
-        }
-    )
-```
-
-**Error Boundary Patterns:**
-```python
-# Service-level error handling
-class CrawlerService:
-    async def execute_crawler(self, crawler_id: int):
-        try:
-            crawler = await self.get_crawler(crawler_id)
-            return await self._run_crawler(crawler)
-        except CrawlerNotFoundError:
-            raise AppError(f"Crawler {crawler_id} not found", "NOT_FOUND")
-        except PlaywrightError as e:
-            log.error("playwright_error", crawler_id=crawler_id, error=str(e))
-            raise AppError("Browser automation failed", "BROWSER_ERROR")
-        except AIProviderError as e:
-            log.error("ai_error", crawler_id=crawler_id, error=str(e))
-            # Try fallback provider
-            return await self._try_fallback_provider(crawler_id)
-```
-
-#### 5.6.2 Loading State Patterns
-
-**Loading State Conventions:**
-```javascript
-// UI loading state management
-class AppState {
-    constructor() {
-        this.state = {
-            crawlers: [],
-            loading: {
-                crawlers: false,
-                crawlerDetail: false,
-                creating: false
-            },
-            errors: {
-                crawlers: null,
-                crawlerDetail: null
-            }
-        };
-    }
+        self.message = message
+        self.details = details or {}
     
-    // Load crawlers with loading state
-    async loadCrawlers() {
-        this.setState({
-            loading: { ...this.state.loading, crawlers: true },
-            errors: { ...this.state.errors, crawlers: null }
-        });
-        
-        try {
-            const crawlers = await this.api.getCrawlers();
-            this.setState({
-                crawlers,
-                loading: { ...this.state.loading, crawlers: false }
-            });
-        } catch (error) {
-            this.setState({
-                loading: { ...this.state.loading, crawlers: false },
-                errors: { ...this.state.errors, crawlers: error.message }
-            });
-        }
-    }
-}
-```
-
-#### 5.6.3 Retry Patterns
-
-**Celery Task Retry:**
-```python
-@celery_app.task(
-    name="crawler.execute",
-    autoretry_for=(PlaywrightError, AIProviderError),
-    retry_backoff=True,
-    retry_kwargs={'max_retries': 3, 'countdown': 60}
-)
-def execute_crawler_task(crawler_id: int):
-    """Execute crawler with automatic retry"""
-    try:
-        crawler = get_crawler(crawler_id)
-        result = run_crawler(crawler)
-        return {"status": "success", "result": result}
-    except Exception as e:
-        log.error("crawler_failed", crawler_id=crawler_id, error=str(e))
-        raise  # Let Celery handle retry
-```
-
-**API Retry:**
-```python
-import httpx
-from tenacity import retry, stop_after_attempt, wait_exponential
-
-@retry(
-    stop=stop_after_attempt(3),
-    wait=wait_exponential(multiplier=1, min=4, max=10),
-    retry=retry_if_exception_type(httpx.HTTPError)
-)
-async def call_ai_provider(prompt: str, model: str):
-    """Call AI provider with exponential backoff"""
-    async with httpx.AsyncClient() as client:
-        response = await client.post(
-            "https://api.openai.com/v1/chat/completions",
-            json={"model": model, "messages": [{"role": "user", "content": prompt}]}
-        )
-        response.raise_for_status()
-        return response.json()
-```
-
-#### 5.6.4 Authentication Flow Patterns
-
-**JWT Token Flow:**
-```python
-# Login endpoint
-@app.post("/api/auth/login")
-async def login(credentials: LoginRequest):
-    user = await auth_service.authenticate(credentials.username, credentials.password)
-    
-    # Generate tokens
-    access_token = create_access_token(data={"sub": user.user_id})
-    refresh_token = create_refresh_token(data={"sub": user.user_id})
-    
-    return {
-        "data": {
-            "access_token": access_token,
-            "refresh_token": refresh_token,
-            "token_type": "bearer"
-        }
-    }
-
-# JWT refresh endpoint
-@app.post("/api/auth/refresh")
-async def refresh_token(refresh_token: RefreshTokenRequest):
-    try:
-        payload = decode_jwt(refresh_token.token)
-        new_access_token = create_access_token(data={"sub": payload["sub"]})
-        
+    def to_dict(self) -> dict:
         return {
-            "data": {
-                "access_token": new_access_token,
-                "token_type": "bearer"
+            "error": {
+                "code": self.code.name,
+                "code_value": int(self.code),
+                "message": self.message,
+                "details": self.details
             }
         }
-    except JWTError:
-        raise AppError("Invalid refresh token", "AUTHENTICATION_ERROR")
 ```
 
-### 5.7 Enforcement Guidelines
+**日志级别定义：**
+- **实施位置：** `backend/app/core/logging.py`
+
+```python
+import logging
+from enum import StrEnum
+
+class LogLevel(StrEnum):
+    DEBUG = "DEBUG"
+    INFO = "INFO"
+    WARNING = "WARNING"
+    ERROR = "ERROR"
+    CRITICAL = "CRITICAL"
+
+# 日志级别使用指南
+LOG_LEVEL_GUIDELINES = {
+    LogLevel.DEBUG: "调试信息，仅开发环境（函数参数、中间值）",
+    LogLevel.INFO: "常规信息，生产环境（任务开始/完成、状态变更）",
+    LogLevel.WARNING: "警告信息，不影响功能（重试、降级、配置缺失）",
+    LogLevel.ERROR: "错误信息，需要人工干预（AI 失败、浏览器崩溃、网络错误）",
+    LogLevel.CRITICAL: "严重错误，系统不可用（数据库连接失败、配置错误）"
+}
+
+def setup_logging(level: LogLevel = LogLevel.INFO, environment: str = "production"):
+    """配置日志系统"""
+    log_level = getattr(logging, level)
+    
+    if environment == "development":
+        log_level = logging.DEBUG
+    
+    handlers = {
+        "default": {
+            "formatter": "detailed",
+            "class": "logging.StreamHandler",
+            "stream": "ext://sys.stdout",
+            "level": log_level,
+        },
+    }
+    
+    # 生产环境添加文件处理器
+    if environment == "production":
+        handlers["file"] = {
+            "formatter": "simple",
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": "logs/app.log",
+            "maxBytes": 10485760,  # 10MB
+            "backupCount": 5,
+            "level": logging.INFO,
+        }
+    
+    return handlers
+```
+
+**监控指标集成点：**
+- **实施位置：** `backend/app/api/v1/metrics.py`
+- **端点：** `GET /api/v1/metrics`
+- **暴露指标：**
+  - `active_tasks`: 当前活跃任务数
+  - `ai_accuracy_rate`: AI 分析准确率（移动平均）
+  - `browser_pool_memory`: 浏览器池内存占用（MB）
+  - `queue_size`: Celery 队列待处理任务数
+  - `avg_page_analysis_time`: 平均页面分析时间（秒）
+
+```python
+from prometheus_client import Counter, Histogram, Gauge
+from fastapi import APIRouter
+
+router = APIRouter(prefix="/metrics", tags=["metrics"])
+
+# Prometheus 指标定义
+active_tasks_gauge = Gauge('active_tasks', 'Number of active crawl tasks')
+ai_requests_total = Counter('ai_requests_total', 'Total AI API requests', ['provider', 'status'])
+page_analysis_time = Histogram('page_analysis_seconds', 'Page analysis duration')
+browser_memory_gauge = Gauge('browser_memory_mb', 'Browser pool memory usage in MB')
+
+@router.get("/")
+async def get_metrics():
+    """获取系统指标（兼容 Prometheus 和 JSON 格式）"""
+    return {
+        "active_tasks": active_tasks_gauge._value.get(),
+        "ai_requests_total": {
+            "success": ai_requests_total.labels(provider="*", status="success")._value.get(),
+            "failure": ai_requests_total.labels(provider="*", status="failure")._value.get(),
+        },
+        "page_analysis_time_seconds": {
+            "avg": page_analysis_time.observe.__wrapped__.sum,
+            "count": page_analysis_time.observe.__wrapped__.count,
+        },
+        "browser_memory_mb": browser_memory_gauge._value.get(),
+        "queue_size": get_celery_queue_size(),
+    }
+
+@router.get("/prometheus")
+async def prometheus_metrics():
+    """Prometheus 格式指标（用于 Grafana 等监控系统）"""
+    from prometheus_client import generate_latest
+    from prometheus_client.core import REGISTRY
+    return Response(generate_latest(REGISTRY), media_type="text/plain")
+```
+
+### Enforcement Guidelines
 
 **All AI Agents MUST:**
+- 遵循 PEP 8（Python）和 Vue.js 风格指南
+- API 响应必须包含 `{data, error}` 结构
+- 数据库迁移使用 Alembic
+- 前端状态使用 Pinia（避免 Vuex）
 
-1. **Follow PEP 8 Style Guide**
-   - Use snake_case for variables, functions, modules
-   - Use PascalCase for classes
-   - Use UPPER_SNAKE_CASE for constants
-   - Maximum line length: 88 characters
+### Pattern Examples
 
-2. **Use Type Hints**
-   - All function parameters must have type hints
-   - All return types must be specified
-   - Use `Optional[T]` for nullable types
-   - Use `List[T]`, `Dict[K, V]` for collections
-
-3. **Write Docstrings**
-   - Use Google style docstrings
-   - Document all public functions and classes
-   - Include parameter descriptions and return types
-
-4. **Handle Exceptions**
-   - Never use bare `except:` clauses
-   - Log all exceptions before raising
-   - Use custom exception classes for business logic errors
-   - Provide helpful error messages
-
-5. **Use Async/Await Correctly**
-   - Use `async def` for all async functions
-   - Use `await` when calling async functions
-   - Never use `asyncio.run()` inside async functions
-   - Use `async for` for async iteration
-
-6. **Validate Input**
-   - Use Pydantic models for request validation
-   - Validate all user input at API boundaries
-   - Provide clear validation error messages
-   - Use constraints (e.g., `Field(min_length=1)`)
-
-7. **Write Tests**
-   - Write unit tests for all services
-   - Write integration tests for API endpoints
-   - Use fixtures for common test setup
-   - Aim for 80%+ code coverage
-
-**Pattern Enforcement:**
-
-**Automated Checks:**
-- **ruff**: Linting and formatting (run on pre-commit)
-- **mypy**: Type checking (run on CI)
-- **pytest**: Test execution (run on CI)
-- **pytest-cov**: Coverage reporting (fail if < 80%)
-
-**Manual Reviews:**
-- Code reviews for pattern compliance
-- Architecture reviews for structural decisions
-- Regular pattern documentation updates
-
-**Pattern Violation Reporting:**
-- Document violations in code comments
-- Report violations in pull requests
-- Discuss violations in team meetings
-- Update pattern documentation for exceptions
-
-### 5.8 Pattern Examples
-
-#### 5.8.1 Good Examples
-
-**Database Model:**
+**Good Examples:**
 ```python
-# Good: Proper naming and structure
-class Crawler(Base):
-    __tablename__ = "crawlers"
-    
-    crawler_id = Column(Integer, primary_key=True)
-    name = Column(String(100), nullable=False)
-    url = Column(String(500), nullable=False)
-    user_id = Column(Integer, ForeignKey("users.user_id"))
-    is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, onupdate=datetime.utcnow)
-    
-    def __repr__(self) -> str:
-        return f"<Crawler(crawler_id={self.crawler_id}, name={self.name})>"
-```
-
-**API Endpoint:**
-```python
-# Good: Proper error handling and validation
-@app.get("/api/crawlers/{crawler_id}")
-async def get_crawler(crawler_id: int) -> JSONResponse:
-    """Get a single crawler by ID
-    
-    Args:
-        crawler_id: The ID of the crawler to retrieve
-        
-    Returns:
-        JSON response with crawler data
-        
-    Raises:
-        AppError: If crawler not found
-    """
-    try:
-        crawler = await crawler_service.get_crawler(crawler_id)
-        return {
-            "data": crawler.dict(),
-            "meta": {
-                "timestamp": datetime.utcnow().isoformat() + "Z"
-            }
-        }
-    except CrawlerNotFoundError:
-        raise AppError(f"Crawler {crawler_id} not found", "NOT_FOUND")
-```
-
-**Celery Task:**
-```python
-# Good: Proper task naming and error handling
-@celery_app.task(
-    name="crawler.execute",
-    autoretry_for=(PlaywrightError,),
-    retry_backoff=True,
-    retry_kwargs={'max_retries与其他: 3, 'countdown': 60}
-)
-def execute_crawler_task(crawler_id: int) -> Dict[str, Any]:
-    """Execute a crawler task with automatic retry
-    
-    Args:
-        crawler_id: The ID of the crawler to execute
-        
-    Returns:
-        Task result with status and data
-    """
-    try:
-        crawler = get_crawler(crawler_id)
-        result = run_crawler(crawler)
-        return {"status": "success", "result": result}
-    except Exception as e:
-        log.error("crawler_task_failed", crawler_id=crawler_id, error=str(e))
-        raise
-```
-
-#### 5.8.2 Anti-Patterns (What to Avoid)
-
-**Bad Database Model:**
-```python
-# Bad: Inconsistent naming and structure
-class crawlerData:  # Wrong class name
-    __tablename__ = 'CrawlerData'  # Wrong table name
-    
-    ID = Column(Integer, primary_key=True)  # Wrong column name
-    crawlerName = Column(String)  # Should be snake_case
-    userID = Column(Integer)  # Foreign key missing
-    
-    created = Column(DateTime)  # Should be created_at
-```
-
-**Bad API Endpoint:**
-```python
-# Bad: No error handling, no validation
-@app.get("/api/getCrawler")  # Wrong endpoint naming
-async def GetCrawler(id):  # Wrong function and parameter naming
-    crawler = db.query(Crawler).get(id)
-    return crawler  # Should use wrapper format
-```
-
-**Bad Celery Task:**
-```python
-# Bad: No error handling, no retry, no logging
-@celery_app.task
-def execute(crawlerId):  # Wrong naming
-    crawler = get_crawler(crawlerId)
-    result = run(crawler)
-    return result  # No status or error handling
-```
-
----
-
-**Step 5 完成！所有实现模式和一致性规则已定义。**
-
-下一步：项目结构定义
----
-
-## 6. Project Structure & Boundaries
-
-### 6.1 Complete Project Directory Structure
-
-```
-ai-crawler/
-├── README.md                          # Project documentation
-├── LICENSE                            # License file
-├── .gitignore                         # Git ignore patterns
-├── .env.example                       # Environment variables template
-├── .env                               # Local environment (gitignored)
-│
-├── # Python Backend
-├── pyproject.toml                      # Python project (ruff, mypy, pytest)
-├── requirements.txt                     # Python dependencies
-├── requirements-dev.txt                 # Development dependencies
-├── alembic.ini                        # Alembic configuration
-│
-├── app/                              # Main application code
-│   ├── __init__.py
-│   ├── main.py                        # FastAPI application entry point
-│   ├── config.py                      # Configuration (Pydantic)
-│   │
-│   ├── api/                           # FastAPI routes
-│   │   ├── __init__.py
-│   │   ├── __init__.py
-│   │   ├── auth.py                     # Authentication endpoints
-│   │   ├── crawlers.py                 # Crawler management endpoints
-│   │   ├── users.py                    # User management endpoints
-│   │   ├── templates.py                # Template management endpoints
-│   │   ├── tasks.py                    # Task management endpoints
-│   │   └── exports.py                  # Data export endpoints
-│   │
-│   ├── models/                        # SQLAlchemy models
-│   │   ├── __init__.py
-│   │   ├── base.py                    # Base model class
-│   │   ├── user.py                    # User model
-│   │   ├── crawler.py                 # Crawler model
-│   │   ├── template.py                # Template model
-│   │   ├── task.py                    # Task model
-│   │   ├── export.py                  # Export model
-│   │   ├── ai_provider.py            # AI provider model
-│   │   └── audit_log.py              # Audit log model
-│   │
-│   ├── schemas/                       # Pydantic schemas
-│   │   ├── __init__.py
-│   │   ├── user.py                    # User schemas
-│   │   ├── crawler.py                 # Crawler schemas
-│   │   ├── template.py                # Template schemas
-│   │   ├── task.py                    # Task schemas
-│   │   ├── export.py                  # Export schemas
-│   │   ├── ai_provider.py            # AI provider schemas
-│   │   ├── auth.py                    # Auth schemas
-│   │   └── common.py                  # Common schemas
-│   │
-│   ├── services/                      # Business logic
-│   │   ├── __init__.py
-│   │   ├── auth_service.py            # Authentication service
-│   │   ├── crawler_service.py         # Crawler service
-│   │   ├── template_service.py        # Template service
-│   │   ├── export_service.py          # Data export service
-│   │   ├── ai_service.py              # AI analysis service
-│   │   ├── ai_provider_service.py    # AI provider management
-│   │   ├── compliance_service.py      # Compliance checking
-│   │   ├── audit_service.py           # Audit logging
-│   │   └── notification_service.py    # Notification service
-│   │
-│   ├── repositories/                  # Data access layer
-│   │   ├── __init__.py
-│   │   ├── base.py                    # Base repository
-│   │   ├── user_repository.py         # User repository
-│   │   ├── crawler_repository.py      # Crawler repository
-│   │   ├── template_repository.py     # Template repository
-│   │   ├── task_repository.py         # Task repository
-│   │   └── ai_provider_repository.py # AI provider repository
-│   │
-│   ├── tasks/                         # Celery tasks
-│   │   ├── __init__.py
-│   │   ├── celery_app.py            # Celery application
-│   │   ├── crawler_tasks.py         # Crawler execution tasks
-│   │   ├── ai_tasks.py              # AI analysis tasks
-│   │   ├── export_tasks.py          # Data export tasks
-│   │   └── health_tasks.py          # Health check tasks
-│   │
-│   ├── core/                          # Core functionality
-│   │   ├── __init__.py
-│   │   ├── security.py               # Security utilities (Argon2, JWT, Fernet)
-│   │   ├── logging.py                # Structlog configuration
-│   │   ├── websocket.py              # WebSocket manager
-│   │   ├── browser.py                # Playwright browser pool
-│   │   ├── ai_abstraction.py         # AI provider abstraction layer
-│   │   ├── monitoring.py             # Prometheus metrics
-│   │   └── exceptions.py            # Custom exceptions
-│   │
-│   └── utils/                         # Utility functions
-│       ├── __init__.py
-│       ├── helpers.py                # General helpers
-│       ├── validators.py             # Custom validators
-│       └── decorators.py            # Custom decorators
-│
-├── # Electron Frontend
-├── electron/                         # Electron desktop application
-│   ├── package.json                 # Node.js dependencies
-│   ├── main.js                     # Electron main process
-│   ├── preload.js                  # Preload script
-│   │
-│   ├── renderer/                    # Renderer process (UI)
-│   │   ├── index.html               # Main HTML
-│   │   ├── app.js                   # Main JavaScript
-│   │   ├── state.js                 # State management
-│   │   ├── api.js                   # API client
-│   │   ├── websocket.js             # WebSocket client
-│   │   │
-│   │   ├── styles/                  # CSS styles
-│   │   │   ├── main.css
-│   │   │   ├── layout.css
-│   │   │   └── components.css
-│   │   │
-│   │   └── components/              # UI components
-│   │       ├── header.js
-│   │       ├── sidebar.js
-│   │       ├── crawler-list.js
-│   │       ├── crawler-detail.js
-│   │       ├── template-editor.js
-│   │       └── notification.js
-│   │
-│   └── resources/                   # Static assets
-│       ├── icons/
-│       │   ├── icon.ico             # Windows icon
-│       │   ├── icon.icns            # macOS icon
-│       │   └── icon.png             # Linux icon
-│       └── images/
-│           └── logo.png
-│
-├── # Database Migrations
-├── migrations/                       # Alembic migrations
-│   ├── versions/                   # Migration files
-│   ├── env.py                      # Migration environment
-│   └── script.py.mako              # Migration script template
-│
-├── # Tests
-├── tests/                           # Test files (mirrors app/ structure)
-│   ├── __init__.py
-│   ├── conftest.py                  # pytest fixtures
-│   │
-│   ├── test_api/                    # API endpoint tests
-│   │   ├── __init__.py
-│   │   ├── test_auth.py
-│   │   ├── test_crawlers.py
-│   │   ├── test_users.py
-│   │   ├── test_templates.py
-│   │   └── test_exports.py
-│   │
-│   ├── test_services/               # Service tests
-│   │   ├── __init__.py
-│   │   ├── test_auth_service.py
-│   │   ├── test_crawler_service.py
-│   │   ├── test_ai_service.py
-│   │   └── test_export_service.py
-│   │
-│   ├── test_repositories/            # Repository tests
-│   │   ├── __init__.py
-│   │   ├── test_user_repository.py
-│   │   └── test_crawler_repository.py
-│   │
-│   ├── test_tasks/                  # Celery task tests
-│   │   ├── __init__.py
-│   │   ├── test_crawler_tasks.py
-│   │   └── test_ai_tasks.py
-│   │
-│   └── test_core/                   # Core functionality tests
-│       ├── __init__.py
-│       ├── test_security.py
-│       └── test_websocket.py
-│
-├── # Documentation
-├── docs/                            # Documentation
-│   ├── architecture.md             # Architecture documentation
-│   ├── api.md                     # API documentation
-│   ├── deployment.md              # Deployment guide
-│   ├── development.md             # Development guide
-│   └── user-guide.md             # User guide
-│
-├── # Scripts
-├── scripts/                         # Utility scripts
-│   ├── setup_db.py               # Database setup
-│   ├── seed_data.py              # Seed initial data
-│   ├── migrate_db.py            # Run migrations
-│   └── test_coverage.py          # Coverage report
-│
-├── # CI/CD
-├── .github/                         # GitHub workflows
-│   └── workflows/
-│       ├── ci.yml                   # Continuous integration
-│       └── deploy.yml              # Deployment workflow
-│
-└── .pre-commit-config.yaml           # Pre-commit hooks
-```
-
-### 6.2 Architectural Boundaries
-
-#### API Boundaries
-
-**External API Endpoints:**
-```python
-# Public API endpoints (no authentication)
-POST /api/auth/login           # User login
-POST /api/auth/register        # User registration
-POST /api/auth/refresh        # JWT token refresh
-
-# Protected API endpoints (require authentication)
-GET    /api/crawlers         # List crawlers
-POST   /api/crawlers         # Create crawler
-GET    /api/crawlers/{id}    # Get crawler
-PUT    /api/crawlers/{id}    # Update crawler
-DELETE /api/crawlers/{id}    # Delete crawler
-
-GET    /api/users/{id}       # Get user profile
-PUT    /api/users/{id}       # Update user profile
-
-GET    /api/templates        # List templates
-POST   /api/templates        # Create template
-
-GET    /api/exports          # Get export status
-POST   /api/exports          # Request export
-
-# Admin endpoints (require admin role)
-GET    /api/admin/users       # List all users
-DELETE /api/admin/users/{id} # Delete user
-```
-
-**Internal Service Boundaries:**
-```python
-# Services communicate via direct function calls (no monolith microservices)
-crawler_service → ai_service        # AI analysis
-crawler_service → export_service    # Data export
-auth_service → user_repository     # User data access
-```
-
-**Authentication and Authorization Boundaries:**
-```python
-# JWT middleware protects all protected endpoints
-@app.middleware("jwt")
-async def verify_jwt_token(request: Request):
-    token = request.headers.get("Authorization")
-    payload = decode_jwt(token)
-    request.state.user_id = payload["sub"]
-    request.state.user = get_user(payload["sub"])
-
-# Role-based authorization
-@app.get("/api/admin/users", dependencies=[Depends(verify_admin)])
-async def list_all_users():
+# API 端点
+@router.get("/data-sources")
+async def list_data_sources(skip: int = 0, limit: int = 100):
     ...
+
+# 数据库模型
+class CrawlTask(Base):
+    __tablename__ = "crawl_tasks"
+    task_id = Column(UUID(as_uuid=True), primary_key=True)
+    data_source_id = Column(UUID, ForeignKey("data_sources.id"))
 ```
 
-**Data Access Layer Boundaries:**
+**Anti-Patterns:**
 ```python
-# Repositories provide data access abstraction
-class CrawlerRepository(BaseRepository):
-    def get_by_id(self, crawler_id: int) -> Crawler:
-        return self._db.query(Crawler).filter_by(
-            crawler_id=crawler_id
-        ).first()
-    
-    def create(self, crawler: Crawler) -> Crawler:
-        self._db.add(crawler)
-        self._db.commit()
-        return crawler
+# ❌ 避免混合命名
+@router.get("/DataSources")  # 应为小写
 
-# Services use repositories, never direct SQL
-class CrawlerService:
-    def __init__(self, crawler_repo: CrawlerRepository):
-        self._repo = crawler_repo
+# ❌ 避免驼峰命名数据库列
+column_name = "userId"  # 应为 user_id
 ```
 
-#### Component Boundaries
 
-**Frontend Component Communication Patterns:**
-```javascript
-// Event-driven architecture
-class AppState {
-    // Components subscribe to state changes
-    subscribe(listener) {
-        this.listeners.push(listener);
-    }
-    
-    // Components dispatch actions
-    dispatch(action) {
-        this.state = this.reducer(this.state, action);
-        this.notify();
-    }
-}
+## Project Structure & Boundaries
 
-// Example action dispatch
-appState.dispatch({
-    type: 'CRAWLER_STARTED',
-    payload: { crawlerId: 123 }
-});
+### Complete Project Directory Structure
+
+```
+vscode_bmad_method_test/
+├── README.md
+├── .gitignore
+├── .env.example
+├── pyproject.toml                    # Python 项目配置
+├── package.json                     # Electron + 前端配置
+├── requirements.txt                  # Python 依赖
+├── requirements-dev.txt
+│
+├── backend/                          # FastAPI 后端
+│   ├── app/
+│   │   ├── __init__.py
+│   │   ├── main.py                   # FastAPI 应用入口
+│   │   ├── config.py                  # 配置管理
+│   │   ├── dependencies.py              # 依赖注入容器
+│   │   │
+│   │   ├── api/                      # REST API 路由
+│   │   │   ├── __init__.py
+│   │   │   ├── deps.py               # API 依赖
+│   │   │   │
+│   │   │   ├── v1/                     # API v1 路由
+│   │   │   │   ├── __init__.py
+│   │   │   │   │
+│   │   │   │   │   ├── data_sources.py      # 数据源 CRUD
+│   │   │   │   │   ├── crawl_tasks.py       # 爬取任务 CRUD
+│   │   │   │   │   ├── crawl_results.py     # 爬取结果 CRUD
+│   │   │   │   │   ├── ai_providers.py     # AI 提供商管理
+│   │   │   │   │   ├── users.py            # 用户认证
+│   │   │   │   │   └── audit_logs.py        # 审计日志
+│   │   │   │   │
+│   │   │   │   ├── models/                    # SQLAlchemy 模型
+│   │   │   │   │   ├── __init__.py
+│   │   │   │   │   ├── data_source.py
+│   │   │   │   │   ├── crawl_task.py
+│   │   │   │   │   ├── crawl_result.py
+│   │   │   │   │   └── base.py              # 基础模型类
+│   │   │   │   │
+│   │   │   │   ├── schemas/                   # Pydantic schemas
+│   │   │   │   │   ├── __init__.py
+│   │   │   │   │   ├── data_source.py
+│   │   │   │   │   ├── crawl_task.py
+│   │   │   │   │   └── crawl_result.py
+│   │   │   │   │
+│   │   │   │   ├── services/                   # 业务逻辑层
+│   │   │   │   │   ├── __init__.py
+│   │   │   │   │   ├── ai_service.py       # AI 分析服务
+│   │   │   │   │   ├── crawl_service.py    # 爬取服务
+│   │   │   │   │   ├── encryption_service.py # 加密服务
+│   │   │   │   │   ├── compliance_service.py # 合规检查服务
+│   │   │   │   │   └── offline_service.py  # 离线队列管理服务
+│   │   │   │   │
+│   │   │   │   ├── core/                      # 核心配置
+│   │   │   │   │   ├── security.py           # 安全配置（系统密钥环）
+│   │   │   │   │   ├── database.py          # 数据库连接
+│   │   │   │   │   └── settings.py          # 应用设置
+│   │   │   │   │
+│   │   │   │   └── tasks/                     # Celery 异步任务
+│   │   │   │       ├── __init__.py
+│   │   │   │       ├── crawler.py            # Playwright 爬取任务
+│   │   │   │       └── celery_app.py         # Celery 配置
+│   │   │   │
+│   │   │   ├── tests/
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── unit/
+│   │   │   │   └── integration/
+│   │   │   │
+│   │   │   └── alembic/                   # 数据库迁移
+│   │   │       ├── versions/
+│   │   │       └── env.py
+│   │   │
+│   └── Dockerfile                    # 后端 Docker 配置
+│
+├── frontend/                           # Vue.js + Electron 前端
+│   ├── electron/                      # Electron 主进程
+│   │   ├── main.js                  # Electron 入口
+│   │   ├── preload.js              # 预加载脚本
+│   │   └── package.json
+│   │
+│   ├── src/
+│   │   ├── main.js                 # Vue 应用入口
+│   │   ├── App.vue
+│   │   │
+│   │   ├── components/               # Vue 组件（按功能分组）
+│   │   │   ├── simple/            # 简洁视图组件
+│   │   │   │   ├── QuickStartWizard.vue
+│   │   │   │   └── DataPreviewPanel.vue
+│   │   │   ├── dashboard/          # 仪表板视图组件
+│   │   │   │   ├── CrawlTaskList.vue
+│   │   │   │   ├── ProgressMonitor.vue
+│   │   │   │   └── DataExport.vue
+│   │   │   └── professional/        # 专业视图组件
+│   │   │       ├── AdvancedFilters.vue
+│   │   │       └── CodeExport.vue
+│   │   │
+│   │   ├── composables/             # Pinia Composition API
+│   │   │   ├── useCrawlStore.js
+│   │   │   ├── useUiStore.js
+│   │   │   └── useUserStore.js
+│   │   │
+│   │   ├── stores/                  # Pinia stores
+│   │   │   ├── crawl.js
+│   │   │   ├── ui.js
+│   │   │   ├── user.js
+│   │   │   ├── config.js            # 配置历史栈管理
+│   │   │   └── offline.js           # 离线状态管理
+│   │   │
+│   │   ├── api/                     # API 客户端
+│   │   │   ├── client.js              # Axios 配置
+│   │   │   ├── data-sources.js
+│   │   │   ├── crawl-tasks.js
+│   │   │   └── websocket.js          # WebSocket 客户端
+│   │   │
+│   │   ├── utils/                   # 工具函数
+│   │   │   ├── storage.js            # IndexedDB 离线存储
+│   │   │   ├── offline.js            # 网络状态检测和离线管理
+│   │   │   ├── formatters.js         # 数据格式化（snake_case ↔ camelCase）
+│   │   │   └── validators.js         # 前端验证
+│   │   │
+│   │   └── assets/                  # 静态资源
+│   │
+│   ├── tests/
+│   │   └── package.json
+│
+└── docker-compose.yml                  # 开发环境编排
 ```
 
-**State Management Boundaries:**
-```javascript
-// State is immutable and centrally managed
-const initialState = {
-    crawlers: [],
-    activeCrawler: null,
-    loading: {},
-    errors: {},
-    notifications: []
-};
+### Architectural Boundaries
 
-// State boundaries: components cannot mutate directly
-class AppState {
-    setState(newState) {
-        // Always create new state, never mutate
-        this.state = { ...this.state, ...newState };
-    }
-}
-```
+**API Boundaries:**
+- 后端通过 `/api/v1/` 暴露 REST 端点
+- WebSocket 通过 `/ws/progress/{task_id}` 推送进度事件
+- 前端通过 `api/` 模块调用后端，不直接访问数据库
 
-**Service Communication Patterns:**
-```python
-# Services communicate via interfaces, never tightly coupled
-class CrawlerService:
-    def __init__(
-        self,
-        ai_service: AIService,  # Interface, not concrete
-        export_service: ExportService,
-        notification_service: NotificationService
-    ):
-        self._ai = ai_service
-        self._export = export_service
-        self._notify = notification_service
-```
+**Component Boundaries:**
+- Vue 组件通过 props 通信，组件间避免直接耦合
+- Pinia stores 管理共享状态，组件通过 composables 访问
+- WebSocket 事件通过 Pinia action 分发到 store
 
-**Event-Driven Integration Points:**
-```python
-# WebSocket events for real-time communication
-WEBSOCKET_EVENTS = {
-    "crawlers.list": "Request list of crawlers",
-    "crawlers.create": "Create new crawler",
-    "crawlers.start": "Start crawler execution",
-    "crawler.started": "Crawler started notification",
-    "task.progress": "Task progress update",
-    "crawler.completed": "Crawler completion notification",
-}
+**Service Boundaries:**
+- `ai_service` 抽象层隔离 AI 提供商差异
+- `crawl_service` 封装 Playwright 操作
+- `encryption_service` 集中处理所有加密逻辑
 
-# Celery events for task monitoring
-celery_app.on('task_success', handle_task_success)
-celery_app.on('task_failure', handle_task_failure)
-```
+**Data Boundaries:**
+- SQLAlchemy 模型是唯一数据访问层
+- 服务层通过模型访问数据库，不允许 SQL 注入
+- 外部数据通过 API 服务层访问
 
-#### Data Boundaries
-
-**Database Schema Boundaries:**
-```python
-# Each table has clear boundaries
-class User(Base):
-    __tablename__ = "users"
-    user_id = Column(Integer, primary_key=True)
-    # ... other columns
-
-class Crawler(Base):
-    __tablename__ = "crawlers"
-    crawler_id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.user_id"))
-    # Clear foreign key boundaries
-```
-
-**Data Access Patterns:**
-```python
-# Repository pattern for data access
-class BaseRepository:
-    def __init__(self, db: Session):
-        self._db = db
-    
-    def get_by_id(self, id: int) -> Model:
-        """Get entity by ID"""
-        return self._db.query(Model).filter_by(id=id).first()
-    
-    def create(self, entity: Model) -> Model:
-        """Create new entity"""
-        self._db.add(entity)
-        self._db.commit()
-        return entity
-```
-
-**Caching Boundaries:**
-```python
-# Redis caching layer
-class CacheService:
-    def __init__(self, redis_client):
-        self._redis = redis_client
-    
-    async def get(self, key: str) -> Optional[Any]:
-        """Get cached value"""
-        value = await self._redis.get(key)
-        return json.loads(value) if value else None
-    
-    async def set(self, key: str, value: Any, ttl: int = 3600):
-        """Cache value with TTL"""
-        await self._redis.setex(
-            key, 
-            ttl, 
-            json.dumps(value)
-        )
-
-# Service cache boundaries
-class AIService:
-    def __init__(self, cache: CacheService):
-        self._cache = cache
-    
-    async def analyze(self, html: str, url: str):
-        cache_key = f"analysis:{hash(url)}"
-        cached = await self._cache.get(cache_key)
-        if cached:
-            return cached
-        # ... perform analysis
-```
-
-**External Data Integration Points:**
-```python
-# External API integrations
-class AIProviderIntegration:
-    async def call_openai(self, prompt: str) -> Dict:
-        """Call OpenAI API"""
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                "https://api.openai.com/v1/chat/completions",
-                json={"model": "gpt-4", "messages": [{"role": "user", "content": prompt}]}
-            )
-            return response.json()
-    
-    async def call_anthropic(self, prompt: str) -> Dict:
-        """Call Anthropic API"""
-        # ... similar pattern
-```
-
-### 6.3 Requirements to Structure Mapping
+### Requirements to Structure Mapping
 
 **Feature/Epic Mapping:**
 
-**Epic: User Management (FR29-FR37)**
-- Components: `electron/renderer/components/`
-- Services: `app/services/user_service.py`
-- API Routes: `app/api/users.py`
-- Database: `app/models/user.py`
-- Tests: `tests/test_api/test_auth.py`, `tests/test_services/test_auth_service.py`, `tests/test_core/test_security.py`
-
-**Data Privacy & Compliance (FR86-FR95, GDPR/CCPA/China Laws)**
-- Services: `app/services/compliance_service.py`, `app/services/audit_service.py`
-- Database: `app/models/audit_log.py`
-- Core: `app/core/security.py` (encryption)
-- Tests: `tests/test_services/test_compliance_service.py`, `tests/test_services/test_audit_service.py`
-
-**WebSocket Communication (FR32, FR117-FR131)**
-- Core: `app/core/websocket.py`
-- Services: `app/services/notification_service.py`
-- Frontend: `electron/renderer/websocket.js`, `electron/renderer/state.js`
-- Tests: `tests/test_core/test_websocket.py`
-
-**Monitoring & Observability (FR114-FR131)**
-- Core: `app/core/monitoring.py`
-- Services: `app/services/audit_service.py`
-- API Routes: `/health` endpoint in `app/main.py`
-- Tests: `tests/test_core/test_monitoring.py`
-
-### 6.4 Integration Points
-
-**Internal Communication:**
-
-```
-Frontend (Electron)
-    ↓ WebSocket
-Backend (FastAPI)
-    ↓ Direct calls
-Services
-    ↓ Repository calls
-Repositories
-    ↓ SQL
-Database (PostgreSQL)
-    ↓ Async tasks
-Celery Tasks
-    ↓ AI API calls
-AI Providers (Local/Cloud)
-```
-
-**Detailed Communication Flow:**
-
-1. **User Action → WebSocket → Backend**
-   ```
-   Electron UI → WebSocket client → WebSocket server → Route handler
-   ```
-
-2. **API Request → Service → Repository → Database**
-   ```
-   FastAPI route → Service method → Repository query → SQLAlchemy → PostgreSQL
-   ```
-
-3. **Celery Task → AI Provider → Result**
-   ```
-   Celery worker → Task function → AI abstraction → OpenAI/Ollama API → Result
-   ```
-
-4. **Progress Update → WebSocket → UI**
-   ```
-   Celery task → Progress event → WebSocket → Electron UI → State update
-   ```
-
-**External Integrations:**
-
-**Third-Party Service Integration Points:**
-
-```python
-# AI Provider APIs
-app/services/ai_provider_service.py
-    ├── ollama.py          # Local Ollama API
-
-    ├── openai.py          # OpenAI API
-    ├── anthropic.py        # Anthropic API
-    ├── qwen.py            # Qwen API
-    ├── doubao.py          # Doubao API
-    ├── glm.py             # GLM API
-    └── gemini.py          # Google Gemini API
-
-# Browser Automation
-app/core/browser.py
-    └── Playwright API  # Chrome, Firefox, Safari
-
-# Data Warehouses (post-MVP)
-app/services/integration_service.py
-    ├── snowflake.py       # Snowflake integration
-    ├── bigquery.py        # Google BigQuery
-    └── redshift.py        # AWS Redshift
-
-# Data Pipelines (post-MVP)
-app/services/pipeline_service.py
-    ├── kafka.py          # Kafka integration
-    └── kinesis.py        # AWS Kinesis
-```
-
-**Data Flow:**
-
-```
-1. User creates crawler (Electron UI)
-   └─→ POST /api/crawlers (WebSocket)
-        └─→ CrawlerService.create_crawler()
-              └─→ CrawlerRepository.create()
-                    └─→ PostgreSQL
-
-2. User starts crawler
-   └─→ POST /api/crawlers/{id}/start (WebSocket)
-        └─→ CrawlerService.start_crawler()
-              └─→ Celery: crawler.execute_task()
-                    ├─→ Playwright: fetch page
-                    ├─→ AI Service: analyze page
-                    │     ├─→ AI Provider API (OpenAI/Ollama)
-                    │     └─→ Cache service: store result
-                    └─→ PostgreSQL: save extracted data
-                          └─→ WebSocket: progress update
-                                └─→ Electron UI: update state
-
-3. User exports data
-   └─→ POST /api/exports (WebSocket)
-        └─→ ExportService.create_export()
-              └─→ Celery: export_data_task()
-                    ├─→ PostgreSQL: query data
-                    ├─→ Export: CSV/Excel/JSON
-                    └─→ WebSocket: export complete
-```
-
-### 6.5 File Organization Patterns
-
-**Configuration Files:**
-
-**Organization:**
-- **Root**: `pyproject.toml` (Python config), `.env` (environment)
-- **App config**: `app/config.py` (Pydantic settings class)
-- **Alembic**: `alembic.ini` (migration config)
-- **Electron**: `electron/package.json` (Node.js dependencies)
-
-**Pattern:**
-```python
-# app/config.py - Centralized configuration
-from pydantic_settings import BaseSettings
-
-class Settings(BaseSettings):
-    # Database
-    DATABASE_URL: str
-    REDIS_URL: str
-    
-    # AI Providers
-    OLLAMA_URL: str = "http://localhost:11434"
-    OPENAI_API_KEY: str = ""
-    
-    # Security
-    JWT_SECRET_KEY: str
-    JWT_EXPIRE_MINUTES: int = 30
-    
-    class Config:
-        env_file = ".env"
-
-settings = Settings()
-```
-
-**Source Organization:**
-
-**Layered Architecture:**
-```
-app/
-├── api/          # Presentation layer (FastAPI routes)
-├── services/      # Business logic layer
-├── repositories/  # Data access layer
-├── models/        # Data models
-├── schemas/       # Request/response validation
-├── tasks/         # Background tasks (Celery)
-├── core/          # Core functionality (security, logging, etc.)
-└── utils/         # Utility functions
-```
-
-**Pattern:**
-- Each layer has clear responsibilities
-- Upper layers depend on lower layers (API → Service → Repository)
-- No circular dependencies
-- Interfaces used for flexibility
-
-**Test Organization:**
-
-**Mirrors Application Structure:**
-```
-tests/
-├── test_api/          # Tests for app/api/
-├── test_services/      # Tests for app/services/
-├── test_repositories/  # Tests for app/repositories/
-├── test_tasks/         # Tests for app/tasks/
-└── test_core/          # Tests for app/core/
-```
-
-**Pattern:**
-```python
-# tests/conftest.py - Shared fixtures
-import pytest
-from fastapi.testclient import TestClient
-from app.main import app
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-
-@pytest.fixture
-def client():
-    """Test client fixture"""
-    return TestClient(app)
-
-@pytest.fixture
-def db_session():
-    """Database session fixture"""
-    engine = create_engine("sqlite:///:memory:")
-    Session = sessionmaker(bind=engine)
-    session = Session()
-    yield session
-    session.close()
-
-@pytest.fixture
-def authenticated_client(client, db_session):
-    """Authenticated client fixture"""
-    # Create test user
-    user = create_test_user(db_session)
-    # Create JWT token
-    token = create_test_token(user.user_id)
-    # Add Authorization header
-    client.headers.update({"Authorization": f"Bearer {token}"})
-    return client
-```
-
-**Asset Organization:**
-
-**Frontend Assets:**
-```
-electron/resources/
-├── icons/
-│   ├── icon.ico       # Windows icon (256x256)
-│   ├── icon.icns      # macOS icon (multiple sizes)
-│   └── icon.png       # Linux icon (512x512)
-├── images/
-│   ├── logo.png       # Application logo
-│   ├── splash.png     # Splash screen
-│   └── banners/       # UI banners
-└── fonts/
-    └── ...            # Custom fonts
-```
-
-**Pattern:**
-- Platform-specific icon formats
-- High-resolution images for all platforms
-- Assets not in version control if large
-
-### 6.6 Development Workflow Integration
-
-**Development Server Structure:**
-
-**Python Backend:**
-```bash
-# Development workflow
-1. Install dependencies
-   pip install -r requirements-dev.txt
-
-2. Setup environment
-   cp .env.example .env
-   # Edit .env with your settings
-
-3. Run migrations
-   alembic upgrade head
-
-4. Start Redis
-   redis-server
-
-5. Start Celery worker
-   celery -A app.tasks.celery_app worker --loglevel=info
-
-6. Start FastAPI server
-   uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-
-# Development server at http://localhost:8000
-# API docs at http://localhost:8000/docs
-```
-
-**Electron Frontend:**
-```bash
-# Development workflow
-1. Install Node.js dependencies
-   cd electron
-   npm install
-
-2. Start Electron in development
-   npm run dev
-
-# Development window opens with hot reload
-```
-
-**Combined Development:**
-```bash
-# Use tmux or terminal tabs
-# Terminal 1: Redis
-redis-server
-
-# Terminal 2: Celery
-celery -A app.tasks.celery_app worker --loglevel=info
-
-# Terminal 3: FastAPI
-uvicorn app.main:app --reload
-
-# Terminal 4: Electron
-cd electron && npm run dev
-
-# Terminal 5: Tests (optional)
-pytest tests/ --cov=app -v
-```
-
-**Build Process Structure:**
-
-**Python Build:**
-```bash
-# Production build
-1. Run linters
-   ruff check app/
-   mypy app/
-
-2. Run tests
-   pytest tests/ --cov=app --cov-fail-under=80
-
-3. Run migrations
-   alembic upgrade head
-
-4. Build package
-   python -m build
-
-# Output: dist/
-```
-
-**Electron Build:**
-```bash
-# Production build
-1. Build frontend
-   npm run build
-
-2. Package with Electron Builder
-   npm run build
-
-# Output: electron/dist/
-# - ai-crawler-setup.exe (Windows)
-# - ai-crawler.dmg (macOS)
-# - ai-crawler.AppImage (Linux)
-```
-
-**CI/CD Integration:**
-```yaml
-# .github/workflows/ci.yml
-name: CI
-on: [push, pull_request]
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.10'
-      - name: Install dependencies
-        run: |
-          pip install -r requirements.txt
-          pip install -r requirements-dev.txt
-      - name: Lint
-        run: |
-          ruff check app/
-          mypy app/
-      - name: Test
-        run: pytest tests/ --cov=app --cov-fail-under=80
-```
-
-**Deployment Structure:**
-
-**Development Deployment:**
-```bash
-# Local development
-1. Setup PostgreSQL
-2. Setup Redis
-3. Run migrations
-4. Start services (Redis, Celery, FastAPI, Electron)
-```
-
-**Production Deployment:**
-```bash
-# Production deployment (local to user machine)
-1. Build Electron app
-   npm run build
-
-2. Create installer
-   electron-builder --win nsis
-
-3. Distribute .exe installer
-
-# User flow:
-1. Download ai-crawler-setup.exe
-2. Run installer
-3. Configure (PostgreSQL, Redis)
-4. Start application
-5. Application starts FastAPI + Celery workers in background
-```
-
-**Configuration Management:**
-```python
-# Environment-specific configuration
-# Development (.env)
-DATABASE_URL=postgresql://user:pass@localhost:5432/dev_db
-DEBUG=True
-LOG_LEVEL=DEBUG
-
-# Production (.env)
-DATABASE_URL=postgresql://user:pass@localhost:5432/prod_db
-DEBUG=False
-LOG_LEVEL=INFO
-JWT_SECRET_KEY=...  # Strong secret key
-```
-
----
-
-**Step 6 完成！所有项目结构和边界已定义。**
-
-下一步：架构验证
----
-
-## 7. Architecture Validation Results
-
-### 7.1 Coherence Validation ✅
-
-**Decision Compatibility:**
-
-**Technology Choice Compatibility:**
-- ✅ Python 3.10+ fully compatible with FastAPI, SQLAlchemy, Celery, Playwright
-- ✅ FastAPI (async) properly integrates with Celery (multi-process) via Redis queue
-- ✅ SQLAlchemy 2.0+ fully compatible with PostgreSQL and Alembic
-- ✅ WebSocket + REST API hybrid architecture aligns with ADR-009 decision
-- ✅ Pydantic v2 natively integrates with FastAPI automatic validation
-- ✅ Argon2id + JWT + cryptography security stack compatible
-- ✅ Electron + Python backend communicate via WebSocket (consistent decision)
-- ✅ Playwright v1.51.0 + Worker Pool pattern aligns with ADR-003 enhancement
-
-**Version Compatibility:**
-- ✅ Playwright v1.51.0 (June 2025 release) is latest stable version
-- ✅ FastAPI latest version supports Python 3.10+
-- ✅ Celery 5.3+ compatible with Redis 7.x
-- ✅ SQLAlchemy 2.0+ compatible with PostgreSQL 14+
-
-**Conflict Detection:**
-- ✅ No technology conflicts: all choices work together
-- ✅ No version conflicts: all dependency versions compatible
-- ✅ No architectural contradictions: all ADRs consistent
-
-**Pattern Consistency:**
-
-**Pattern Support for Architectural Decisions:**
-- ✅ Naming conventions (snake_case, PascalCase) align with Python PEP 8
-- ✅ API naming (/api/plural, {id}) aligns with FastAPI best practices
-- ✅ Database naming (snake_case tables, {table}_id primary key) aligns with SQLAlchemy patterns
-- ✅ Structured logging (structlog) aligns with production requirements
-- ✅ Exception handling (custom exception classes) aligns with ADR decisions
-- ✅ Testing patterns (pytest, fixtures) align with Python testing best practices
-
-**Cross-Component Consistency:**
-- ✅ Frontend (Electron) and backend (FastAPI) communicate via WebSocket (ADR-009)
-- ✅ Celery tasks and Playwright integrate via Worker Pool (ADR-003)
-- ✅ AI providers managed via unified abstraction layer (ADR-012)
-- ✅ All components use consistent error handling patterns
-- ✅ All API endpoints use consistent response format
-
-**Structure Alignment:**
-
-- ✅ Project structure supports all architectural decisions
-- ✅ Boundaries properly defined and respected
-- ✅ Structure enables chosen patterns (layered architecture)
-- ✅ Integration points properly structured (WebSocket, Celery, API)
-
-### 7.2 Requirements Coverage Validation ✅
-
-**Epic/Feature Coverage:**
-
-**FR Category Coverage Analysis:**
-
-| FR Category | Architectural Support | Components |
-|-------------|---------------------|------------|
-| FR1-FR10 AI Page Analysis | ✅ Complete Coverage | `app/services/ai_service.py`, `app/tasks/ai_tasks.py`, `app/core/browser.py` |
-| FR11-FR28 Multi-Provider AI | ✅ Complete Coverage | `app/services/ai_provider_service.py`, `app/models/ai_provider.py`, `app/core/ai_abstraction.py` |
-| FR29-FR37 User Interface | ✅ Complete Coverage | `electron/` (entire frontend application) |
-| FR38-FR46 Data Management | ✅ Complete Coverage | `app/repositories/`, `app/services/export_service.py` |
-| FR47-FR56 Crawler Tasks | ✅ Complete Coverage | `app/services/crawler_service.py`, `app/tasks/crawler_tasks.py` |
-| FR57-FR66 Anti-Crawler | ✅ Complete Coverage | `app/core/anti_crawler.py`, `app/services/compliance_service.py` |
-| FR86-FR95 Security & Auth | ✅ Complete Coverage | `app/core/security.py`, `app/services/auth_service.py` |
-| FR96-FR113 Community | ✅ Partial Coverage | Template system and sharing features (extensible) |
-| FR114-FR131 Monitoring | ✅ Complete Coverage | `app/core/monitoring.py`, `/health` endpoint |
-
-**Cross-Cutting FR Coverage:**
-- ✅ Data Privacy (GDPR/CCPA/China Laws): Local storage, encryption, audit logs
-- ✅ Real-time Feedback: WebSocket, progress events, state management
-- ✅ Multi-Provider AI: Unified abstraction layer, automatic fallback, cost tracking
-- ✅ Resource Management: Playwright Worker Pool, connection pooling, memory monitoring
-
-**Functional Requirements Coverage:**
-- ✅ All 130+ FRs architecturally supported
-- ✅ All FR categories fully covered by architectural decisions
-- ✅ All cross-cutting FRs properly addressed
-- ✅ No missing architectural capabilities identified
-
-**Non-Functional Requirements Coverage:**
-
-| NFR Category | Architectural Support | Implementation |
-|-------------|---------------------|-------------|
-| NFR1-NFR7 Performance | ✅ Complete Coverage | Playwright async, Redis caching, query optimization, Worker Pool |
-| NFR9-NFR16 Security | ✅ Complete Coverage | Argon2id, JWT, Fernet encryption, RBAC, audit logging |
-| NFR17-NFR23 Scalability | ✅ Complete Coverage | Celery distributed, horizontal scaling, connection pooling |
-| NFR40-NFR47 AI Reliability | ✅ Complete Coverage | Multi-provider fallback, confidence scoring, human correction flows |
-| NFR48-NFR65 AI Performance | ✅ Complete Coverage | Local Ollama + cloud, fast switching, automatic fallback |
-| NFR55-NFR60 Resource Requirements | ✅ Complete Coverage | Minimum 4GB RAM, 2 CPUs, 10GB disk |
-
-### 7.3 Implementation Readiness Validation ✅
-
-**Decision Completeness:**
-- ✅ All critical decisions documented with versions
-- ✅ Technology stack fully specified (Python 3.10+, FastAPI, SQLAlchemy v2.0+, etc.)
-- ✅ Integration patterns defined (WebSocket, Worker Pool, Unified Abstraction Layer)
-- ✅ Performance considerations addressed (caching, connection pooling, async processing)
-
-**Structure Completeness:**
-- ✅ Project structure complete and specific (2700+ lines of documentation)
-- ✅ All key files and directories defined
-- ✅ Integration points clearly specified (API boundaries, component boundaries, data boundaries)
-- ✅ Component boundaries well-defined (API → Service → Repository → Database)
-
-**Pattern Completeness:**
-- ✅ All potential conflict points addressed (27 conflict points identified)
-- ✅ Naming conventions comprehensive (Python PEP 8, FastAPI, SQLAlchemy)
-- ✅ Communication patterns fully specified (WebSocket, Celery, API)
-- ✅ Process patterns complete (error handling, loading states, retry, authentication)
-
-### 7.4 Gap Analysis Results
-
-**Critical Gaps:**
-✅ None - All blocking elements fully defined
-
-**Important Gaps:**
-⚠️ Suggested Post-MVP Enhancements:
-
-**Enhancement 1: Data Warehouse
-- **What**: Snowflake, BigQuery, Redshift integration
-- **Why**: FR77-FR85 reference system integration
-- **When**: Post-MVP phase
-- **Impact**: Enable enterprise data pipeline integration
-
-**Enhancement 2: Advanced Observability**
-- **What**: OpenTelemetry distributed tracing
-- **Why**: Better debugging across distributed components
-- **When**: Post-MVP phase (optional)
-- **Impact**: Improved production monitoring and debugging
-
-**Enhancement 3: API Documentation**
-- **What**: Enhanced API documentation with examples
-- **Why**: Improve developer experience
-- **When**: Continuous improvement
-- **Impact**: Easier integration and testing
-
-**Nice-to-Have Gaps:**
-- Container orchestration (Kubernetes) - for cloud deployment
-- Advanced caching (Redis cluster) - for high-scale deployments
-- CDN integration - for static asset distribution
-
-### 7.5 Validation Issues Addressed
-
-✅ No critical issues found during validation
-
-All architectural elements are coherent, complete, and ready for implementation.
-
-### 7.6 Architecture Completeness Checklist
-
-**✅ Requirements Analysis**
-- [x] Project context thoroughly analyzed
-- [x] Scale and complexity assessed
-- [x] Technical constraints identified
-- [x] Cross-cutting concerns mapped
-
-**✅ Architectural Decisions**
-- [x] Critical decisions documented with versions
-- [x] Technology stack fully specified
-- [x] Integration patterns defined
-- [x] Performance considerations addressed
-
-**✅ Implementation Patterns**
-- [x] Naming conventions established
-- [x] Structure patterns defined
-- [x] Communication patterns specified
-- [x] Process patterns documented
-
-**✅ Project Structure**
-- [x] Complete directory structure defined
-- [x] Component boundaries established
-- [x] Integration points mapped
-- [x] Requirements to structure mapping complete
-
-### 7.7 Architecture Readiness Assessment
-
-**Overall Status:** 🚀 READY FOR IMPLEMENTATION
-
-**Confidence Level:** HIGH - Based on comprehensive validation from multiple architect perspectives
-
-**Key Strengths:**
-1. **Complete Technology Stack**: All technologies specified with verified versions
-2. **Clear Component Boundaries**: Well-defined API, service, and data boundaries
-3. **Detailed Implementation Patterns**: 27 conflict points addressed
-4. **Comprehensive Requirements Coverage**: All FRs and NFRs architecturally supported
-5. **Multi-Perspective Validation**: Coherence validated from multiple architect viewpoints
-6. **Enhanced ADRs**: First Principles analysis improved 4 key decisions
-7. **Project Structure**: Complete directory tree with 2700+ lines of documentation
-8. **Consistency Rules**: Clear enforcement guidelines for AI agents
-
-**Areas for Future Enhancement:**
-- Data warehouse integration (Snowflake, BigQuery, Redshift) - Post-MVP
-- Advanced observability (OpenTelemetry distributed tracing) - Post-MVP
-- Enhanced API documentation with examples - Continuous improvement
-- Container orchestration (Kubernetes) - For cloud deployment scenarios
-
-### 7.8 Implementation Handoff
-
-**AI Agent Guidelines:**
-
-All AI agents (e.g., Amelia) implementing this project MUST:
-
-1. **Follow Architectural Decisions Exactly**
-   - Use specified technology versions (Playwright v1.51.0, Python 3.10+, etc.)
-   - Implement ADRs as documented (Worker Pool pattern, unified abstraction layer, etc.)
-   - Respect architectural constraints (local-first deployment, mixed AI architecture)
-
-2. **Use Implementation Patterns Consistently**
-   - Follow naming conventions (snake_case, PascalCase, /api/plural)
-   - Use defined patterns (layered architecture, repository pattern, custom exceptions)
-   - Apply consistency rules (error handling, logging, validation)
-
-3. **Respect Project Structure and Boundaries**
-   - Create files in specified directories (app/, electron/, tests/)
-   - Follow layer architecture (API → Service → Repository → Database)
-   - Use defined integration points (WebSocket, Celery, API endpoints)
-
-4. **Reference This Document**
-   - Consult architecture.md for all architectural questions
-   - Follow validation checklist when making decisions
-   - Use examples from pattern definitions
-   - Report any architectural questions or inconsistencies
-
-**First Implementation Priority:**
-
-**Recommended Starting Point:**
-
-1. **Setup Foundation**
-   - Create project structure as defined
-   - Setup configuration (app/config.py, .env)
-   - Initialize database (PostgreSQL + Alembic)
-
-2. **Implement Core Services**
-   - Authentication system (app/services/auth_service.py, app/core/security.py)
-   - Error handling (app/core/exceptions.py)
-   - Logging (app/core/logging.py)
-
-3. **Implement Data Layer**
-   - Database models (app/models/)
-   - Repositories (app/repositories/)
-   - Migrations (alembic upgrade head)
-
-4. **Implement API Layer**
-   - FastAPI application (app/main.py)
-   - API routes (app/api/)
-   - Pydantic schemas (app/schemas/)
-
-5. **Implement Background Tasks**
-   - Celery setup (app/tasks/celery_app.py)
-   - Crawler tasks (app/tasks/crawler_tasks.py)
-   - AI tasks (app/tasks/ai_tasks.py)
-
-6. **Implement Frontend**
-   - Electron setup (electron/main.js)
-   - WebSocket client (electron/renderer/websocket.js)
-   - UI components (electron/renderer/components/)
-
----
-
-**Step 7 完成！架构验证已完成。**
-
-下一步：工作流完成
----
-
-## 8. Architecture Completion Summary
-
-### 8.1 Workflow Completion 🎉
-
-**Congratulations! Architecture Workflow Complete**
-
-We have collaboratively completed a comprehensive architecture decision workflow for the AI-driven web crawler framework.
-
-### 8.2 Achievement Summary
-
-**All 8 Steps Completed:**
-
-✅ **Step 1: Architecture Workflow Initialization**
-- Created architecture.md document
-- Loaded 6 input documents (PRD, product briefs, UX specs)
-- Initialized frontmatter and workflow state
-
-✅ **Step 2: Project Context Analysis**
-- Analyzed 130+ functional requirements (FR1-FR113)
-- Analyzed 65+ non-functional requirements (NFR1-NFR65)
-- Identified 7 cross-cutting concerns
-- Assessed project scale (medium-high complexity, 20-30 components)
-- Mapped key technical constraints and dependencies
-
-✅ **Step 3: Starter Template Evaluation**
-- Confirmed unsuitable for standard starter templates
-- Applied First Principles analysis to enhance 4 key ADRs
-- Updated Playwright version from 1.40.0+ to v1.51.0
-- Enhanced ADR-001 (mixed architecture), enhanced ADR-003 (Playwright v1.51.0)
-- Enhanced ADR-011 (complete management), enhanced ADR-013 (configurable fallback)
-- Used Context7 to verify Playwright latest version (June 2025)
-
-✅ **Step 4: Core Architectural Decisions**
-- Data architecture: SQLAlchemy ORM + Pydantic v2 + Alembic + Redis caching
-- Authentication & Security: Argon2id + JWT + cryptography + fastapi-limiter
-- API design: FastAPI auto OpenAPI + custom exception classes
-- Frontend architecture: Native JS + WebSocket + Electron Builder
-- Infrastructure: python-dotenv + structlog + pytest + ruff + mypy
-- Implementation sequence: 5 phases defined
-- Cross-component dependencies documented
-- Risk mitigation strategies identified
-
-✅ **Step 5: Implementation Patterns & Consistency Rules**
-- Identified 27 potential conflict points
-- Established naming patterns (database, API, code, WebSocket, Celery, logging)
-- Defined structure patterns (project organization, file structure)
-- Specified format patterns (API responses, data exchange)
-- Documented communication patterns (WebSocket, state management, Celery tasks)
-- Defined process patterns (error handling, loading states, retry, authentication)
-- Provided good examples and anti-patterns
-
-✅ **Step 6: Project Structure & Boundaries**
-- Created complete project directory tree (2700+ lines)
-- Defined API boundaries (external endpoints, internal services, auth, data access)
-- Specified component boundaries (frontend communication, state management, services)
-- Mapped requirements to structure (11 FR categories)
-- Identified integration points (internal communication, external integrations, data flow)
-- Documented file organization patterns (configuration, source, tests, assets)
-- Specified development workflow integration (dev server, build process, deployment)
-
-✅ **Step 7: Architecture Validation (Multi-Architect Perspectives)**
-- Validated coherence (decision compatibility, pattern consistency, structure alignment)
-- Verified requirements coverage (130+ FRs, 65+ NFRs fully covered)
-- Confirmed implementation readiness (decision completeness, structure completeness, pattern completeness)
-- Identified 0 critical gaps
-- Proposed 3 post-MVP enhancements (data warehouse integration, advanced observability)
-- Confidence level: HIGH based on comprehensive validation
-
-### 8.3 Key Deliverables
-
-**Architecture Decision Document (architecture.md):**
-- ✅ 2900+ lines of comprehensive documentation
-- ✅ 8 major sections completed
-- ✅ 16 ADRs documented (4 enhanced with First Principles analysis)
-- ✅ Complete technology stack defined (all versions verified via Context7)
-- ✅ Detailed project structure with 2700+ lines
-- ✅ 27 implementation patterns defined with examples
-- ✅ Complete validation checklist
-- ✅ AI agent guidelines for consistent implementation
-
-### 8.4 Technology Stack Summary
-
-**Backend:**
-- Python 3.10+
-- FastAPI (async/await REST API)
-- SQLAlchemy 2.0+ ORM
-- Pydantic v2 (validation)
-- Celery 5.3+ with Redis
-- Playwright v1.51.0 (browser automation)
-- PostgreSQL (data storage)
-- Redis (cache + task queue)
-- Argon2id (password hashing)
-- JWT + python-jose (authentication)
-- cryptography (encryption)
-- fastapi-limiter (rate limiting)
-- structlog (logging)
-- pytest (testing)
-- ruff + mypy (code quality)
-
-**Frontend:**
-- Electron (cross-platform desktop app)
-- Native JavaScript (no framework overhead)
-- WebSocket (real-time communication)
-- Electron Builder (packaging)
-
-**Infrastructure:**
-- Local deployment (user's machine)
-- python-dotenv (configuration)
-- Alembic (migrations)
-- Pydantic Settings (type-safe config)
-
-### 8.5 Architecture Highlights
-
-**Strengths:**
-1. **Complete Technology Stack**: All technologies specified with verified versions
-2. **Clear Component Boundaries**: Well-defined API, service, and data boundaries
-3. **Detailed Implementation Patterns**: 27 conflict points addressed
-4. **Comprehensive Requirements Coverage**: All FRs and NFRs architecturally supported
-5. **Multi-Perspective Validation**: Coherence validated from multiple architect viewpoints
-6. **Enhanced ADRs**: First Principles analysis improved 4 key decisions
-7. **Project Structure**: Complete directory tree with integration points mapped
-8. **Consistency Rules**: Clear enforcement guidelines for AI agents
-9. **Ready for Implementation**: High confidence level, zero critical gaps
-
-**Key Architectural Decisions:**
-- Mixed local-cloud architecture (local-first, cloud optional)
-- Multi-provider AI with unified abstraction layer
-- Worker Pool pattern for Playwright browser management
-- WebSocket + REST API hybrid for real-time + CRUD
-- Celery + Redis for background task orchestration
-- Layered architecture (API → Service → Repository → Database)
-
-### 8.6 Next Steps for Implementation
-
-**Recommended Implementation Sequence:**
-
-**Phase 1: Foundation Setup (Week 1)**
-1. Create project structure as defined in architecture.md
-2. Setup configuration (app/config.py with Pydantic, .env file)
-3. Initialize database (PostgreSQL + Alembic)
-4. Setup Redis and Celery
-5. Configure logging (structlog)
-
-**Phase 2: Core Services (Week 2)**
-1. Implement authentication system (Argon2id + JWT)
-2. Implement error handling framework (custom exceptions)
-3. Implement WebSocket manager
-4. Create base repository classes
-5. Set up Pydantic schemas
-
-**Phase 3: Data Layer (Week 3)**
-1. Create SQLAlchemy models (users, crawlers, templates, tasks, etc.)
-2. Implement repositories (user, crawler, template repositories)
-3. Create and run Alembic migrations
-4. Implement caching layer (Redis)
-
-**Phase 4: API Layer (Week 4-5)**
-1. Implement FastAPI application structure
-2. Create API routes (auth, crawlers, users, templates, exports)
-3. Implement API security middleware (CORS, rate limiting, JWT verification)
-4. Setup OpenAPI auto-documentation
-
-**Phase 5: Background Tasks (Week 5-6)**
-1. Implement Celery application setup
-2. Create Celery tasks (crawler execution, AI analysis, data export)
-3. Implement Worker Pool pattern for Playwright
-4. Set up task monitoring and health checks
-
-**Phase 6: AI Integration (Week 6-7)**
-1. Implement AI provider abstraction layer
-2. Integrate local Ollama
-3. Integrate cloud providers (OpenAI, Anthropic, etc.)
-4. Implement automatic fallback and cost tracking
-5. Implement data脱敏 and compliance checking
-
-**Phase 7: Browser Automation (Week 7-8)**
-1. Implement Playwright browser pool
-2. Implement Worker Pool pattern
-3. Add anti-crawling measures
-4. Implement page extraction logic
-5. Add compliance checking (robots.txt, terms of service)
-
-**Phase 8: Frontend (Week 8-10)**
-1. Set up Electron application
-2. Implement WebSocket client
-3. Create UI components (crawlers, templates, exports)
-4. Implement state management
-5. Add real-time progress updates
-
-**Phase 9: Testing & Quality (Ongoing)**
-1. Implement pytest fixtures
-2. Write unit tests for services
-3. Write integration tests for API endpoints
-4. Set up CI/CD pipeline
-5. Configure pre-commit hooks (ruff + mypy)
-
-### 8.7 Implementation Guidelines for AI Agents
-
-**All AI Agents (e.g., Amelia) MUST:**
-
-1. **Follow Architectural Decisions Exactly**
-   - Use specified technology versions (Playwright v1.51.0, Python 3.10+, etc.)
-   - Implement ADRs as documented (Worker Pool pattern, unified abstraction layer, etc.)
-   - Respect architectural constraints (local-first deployment, mixed AI architecture)
-
-2. **Use Implementation Patterns Consistently**
-   - Follow naming conventions (snake_case, PascalCase, /api/plural)
-   - Use defined patterns (layered architecture, repository pattern, custom exceptions)
-   - Apply consistency rules (error handling, logging, validation)
-   - Avoid anti-patterns documented in section 5.8
-
-3. **Respect Project Structure and Boundaries**
-   - Create files in specified directories (app/, electron/, tests/)
-   - Follow layered architecture (API → Service → Repository → Database)
-   - Use defined integration points (WebSocket, Celery, API endpoints)
-   - Maintain component boundaries (no tight coupling)
-
-4. **Reference This Document**
-   - Consult architecture.md for all architectural questions
-   - Follow validation checklist when making decisions
-   - Use examples from pattern definitions
-   - Report any architectural questions or inconsistencies
-
-5. **Maintain Consistency**
-   - Use ruff for linting and formatting
-   - Use mypy for type checking
-   - Write tests for all new code
-   - Follow Python PEP 8 style guide
-   - Document all public functions with docstrings
-
-### 8.8 Architecture Readiness Assessment
-
-**Status:** ✅ **COMPLETE AND READY FOR IMPLEMENTATION**
-
-**Confidence Level:** **HIGH**
-- All architectural decisions validated for coherence
-- Complete requirements coverage verified (FR + NFR)
-- Implementation readiness confirmed
-- All gaps identified and addressed
-- Comprehensive validation checklist completed
-- Multi-perspective validation completed
-
-**Risk Level:** **LOW**
-- Zero critical gaps identified
-- All technology versions verified and compatible
-- Clear implementation patterns prevent conflicts
-- Complete project structure eliminates ambiguity
-- Detailed AI agent guidelines ensure consistency
-
-### 8.9 Success Metrics ✅
-
-✅ Complete architecture document delivered (2900+ lines)
-✅ All 8 workflow steps completed successfully
-✅ All architectural decisions documented and validated
-✅ Implementation patterns and consistency rules finalized
-✅ Complete project structure defined (2700+ lines)
-✅ Comprehensive validation completed from multiple perspectives
-✅ Zero critical gaps identified
-✅ High confidence level for implementation readiness
-✅ Clear implementation guidelines provided
-✅ User collaboration maintained throughout workflow
-✅ Frontmatter properly updated with final status
-
-### 8.10 Resources for Next Steps
-
-**For Implementation:**
-- This architecture.md document is the single source of truth
-- Refer to specific sections when implementing features
-- Follow implementation patterns section for consistency
-- Use project structure section as directory guide
-- Consult AI agent guidelines when making technical decisions
-
-**For Questions:**
-- Architecture decisions are documented with rationale
-- Trade-offs and mitigations are explained
-- Examples and anti-patterns are provided
-- Validation results are comprehensive
-
-**For Enhancements:**
-- Post-MVP enhancements are documented in section 7.4
-- Future improvements are suggested with rationale
-- Areas for enhancement are clearly identified
-
----
-
-## 🎉 Architecture Workflow Complete!
-
-**Status:** SUCCESS
-**Confidence:** HIGH
-**Ready for Implementation:** YES
-**Document Location:** `_bmad-output/planning-artifacts/architecture.md`
-**Total Lines:** 2900+
-**Work Duration:** Step-by-step collaborative discovery
-
-**Thank you for completing the architecture workflow together!**
-
-The AI-driven web crawler framework now has a comprehensive, validated architecture ready for implementation. All AI agents can reference this document to ensure consistent, high-quality implementation.
-
----
-
-**Next Recommended Action:**
-Run `bmad-help` skill to discover next steps for your project development.
-- Repository: `app/repositories/user_repository.py`
-- Schemas: `app/schemas/user.py`
-- Tests: `tests/test_api/test_users.py`, `tests/test_services/test_user_service.py`
-
-**Epic: Crawler Execution (FR1-FR10, FR47-FR56)**
-- Components: `electron/renderer/components/crawler-*.js`
-- Services: `app/services/crawler_service.py`, `app/services/ai_service.py`
-- API Routes: `app/api/crawlers.py`
-- Database: `app/models/crawler.py`, `app/models/task.py`
-- Repository: `app/repositories/crawler_repository.py`
-- Celery Tasks: `app/tasks/crawler_tasks.py`, `app/tasks/ai_tasks.py`
-- Core: `app/core/browser.py`, `app/core/ai_abstraction.py`
-- Tests: `tests/test_services/test_crawler_service.py`, `tests/test_tasks/test_crawler_tasks.py`
-
-**Epic: Template Management (FR96-FR113)**
-- Components: `electron/renderer/components/template-editor.js`
-- Services: `app/services/template_service.py`
-- API Routes: `app/api/templates.py`
-- Database: `app/models/template.py`
-- Repository: `app/repositories/template_repository.py`
-- Schemas: `app/schemas/template.py`
-- Tests: `tests/test_api/test_templates.py`
-
-**Epic: Data Export (FR38-FR46, FR77-FR85)**
-- Components: `electron/renderer/components/export.js`
-- Services: `app/services/export_service.py`
-- API Routes: `app/api/exports.py`
-- Database: `app/models/export.py`
-- Celery Tasks: `app/tasks/export_tasks.py`
-- Tests: `tests/test_services/test_export_service.py`
+| Epic | 目录位置 | 关键文件 |
+|-------|-----------|----------|
+| Epic 1 - 用户认证 & 系统配置 | `backend/app/api/v1/users.py`, `frontend/src/components/simple/QuickStartWizard.vue` |
+| Epic 2 - AI 页面分析 | `backend/app/services/ai_service.py`, `backend/app/tasks/crawler.py` |
+| Epic 3 - 爬取任务管理 | `backend/app/api/v1/crawl_tasks.py`, `frontend/src/stores/crawl.js` |
+| Epic 4 - 用户界面 & 交互 | `frontend/src/components/` (三级视图), `frontend/src/stores/ui.js` |
+| Epic 5 - 数据管理 & 导出 | `backend/app/api/v1/crawl_results.py`, `frontend/src/components/dashboard/DataExport.vue` |
+| Epic 6 - 安全与合规 | `backend/app/services/compliance_service.py`, `backend/app/core/security.py` |
+| Epic 7 - AI 模型集成 | `backend/app/api/v1/ai_providers.py`, `backend/app/services/ai_service.py` |
 
 **Cross-Cutting Concerns:**
 
-**Authentication System (FR86-FR95)**
-- Components: `electron/renderer/components/` (auth UI)
-- Services: `app/services/auth_service.py`
-- Middleware: `app/core/security.py`
-- API Routes: `app/api/auth.py`
-- Database: `app/models/user.py
+- **认证系统**: `backend/app/core/security.py` + `frontend/src/stores/user.js`
+- **WebSocket 通信**: `backend/app/api/v1/websocket/` + `frontend/src/api/websocket.js`
+- **AI 抽象层**: `backend/app/services/ai_service.py` 统一接口
+- **数据加密**: `backend/app/services/encryption_service.py` 集中处理
+- **离线功能**: `backend/app/services/offline_service.py` + `frontend/src/utils/offline.js` + `frontend/src/stores/offline.js`
+- **撤销机制**: `frontend/src/stores/config.js` (配置撤销) + `frontend/src/stores/tasks.js` (任务软删除)
+
+### Integration Points
+
+**Internal Communication:**
+- FastAPI 通过依赖注入访问服务层
+- Celery 任务通过 `services.crawl_service` 调用 Playwright
+- Vue 组件通过 Pinia stores 共享状态
+
+**External Integrations:**
+- **AI 提供商**: OpenAI、Anthropic、Ollama、Qwen、Doubao、GLM、Google API
+- **浏览器自动化**: Playwright v1.51.0 (固定版本）
+- **数据库**: PostgreSQL 15.x（本地）
+- **任务队列**: Redis 7.x（Celery broker）
+
+**Data Flow:**
+```
+用户操作 → Vue 组件 → Pinia Store → API 客户端 → FastAPI 路由
+→ 服务层 → SQLAlchemy 模型 → PostgreSQL
+
+爬取任务 → Celery Queue → Worker Pool → Playwright 浏览器
+→ AI 服务 → AI 提供商 API → 页面分析 → 结果存储
+
+进度事件 → Celery Event → FastAPI WebSocket → 前端 WebSocket 客户端
+→ Pinia Store → Vue 组件（仪表板/专业视图）
+```
+
+### File Organization Patterns
+
+**Configuration Files:**
+- `backend/requirements.txt` - Python 生产依赖
+- `frontend/package.json` - 前端依赖和脚本
+- `.env.example` - 环境变量模板
+- `docker-compose.yml` - 开发环境编排
+
+**Source Organization:**
+- 后端按功能模块（api、models、schemas、services、tasks）
+- 前端按类型分层（components、composables、stores、api、utils）
+- 测试与源码同目录结构
+
+**Test Organization:**
+- `backend/tests/unit/` - 单元测试
+- `backend/tests/integration/` - 集成测试
+- `frontend/tests/` - 组件测试
+
+**Asset Organization:**
+- `frontend/src/assets/` - 静态资源（logo、icons）
+- Electron 打包输出在 `dist/`
+
+### Development Workflow Integration
+
+**Development Server Structure:**
+- 后端通过 `uvicorn backend.app.main:app --reload` 启动
+- 前端通过 `npm run dev` 启动（Vite + Electron）
+- Celery 通过 `celery -A backend.app.tasks.celery_app worker` 启动
+
+**Build Process Structure:**
+- 后端通过 `uvicorn` 直接运行，无需单独构建
+- 前端通过 `vite` 构建，Electron 打包输出到 `dist/`
+
+**Deployment Structure:**
+- 本地部署：Electron 生成 `.exe`/`.dmg`/`.deb` 安装包
+- 数据库：PostgreSQL 本地安装（使用 Alembic 迁移）
+
+
+## Architecture Validation Results
+
+### Coherence Validation ✅
+
+**Decision Compatibility:**
+- 所有技术选择兼容（Python 3.10+ + FastAPI 0.100+ + SQLAlchemy 2.0+）
+- Playwright v1.51.0 与 Celery 5.3+ 异步兼容
+- Vue.js + Naive UI + Electron 组合成熟
+- 无版本冲突或依赖问题
+
+**Pattern Consistency:**
+- 实施模式支持所有架构决策（PEP 8 snake_case, Vue.js 风格指南）
+- 命名约定跨前后端一致（后端 snake_case, 前端自动转换）
+- WebSocket 事件格式与状态管理模式一致
+
+**Structure Alignment:**
+- 项目结构支持三级视图策略（simple/dashboard/professional 目录）
+- 边界明确定义（API、组件、服务、数据）
+- 集成点正确结构化（WebSocket、Celery、Playwright）
+
+---
+
+### Requirements Coverage Validation ✅
+
+**Epic/Feature Coverage:**
+| Epic | 架构支持 | 状态 | Stories |
+|------|---------|------|---------|
+| Epic 1 - 用户认证 & 系统配置 | ✅ 系统密钥环 + 首次使用流程 | 完成 | 6 Stories |
+| Epic 2 - AI 页面分析 | ✅ AI 抽象层 + Playwright Worker Pool | 完成 | 8 Stories |
+| Epic 3 - 爬取任务管理 | ✅ Celery 任务队列 + WebSocket 进度 + 离线队列 | 完成 | 8 Stories |
+| Epic 4 - 用户界面 & 交互 | ✅ 三级视图组件 + Pinia stores + 配置撤销 | 完成 | 11 Stories |
+| Epic 5 - 数据管理 & 导出 | ✅ PostgreSQL 模型 + 数据导出 API + 离线访问 | 完成 | 8 Stories |
+| Epic 6 - 安全与合规 | ✅ 加密服务 + 审计日志 + 用户同意 | 完成 | 5 Stories |
+| Epic 7 - AI 模型集成 | ✅ 8 个提供商抽象层 | 完成 | 5 Stories |
+| Epic 8 - 桌面部署与系统集成 | ✅ 多平台安装包 + Docker/K8s + 离线模式 | 完成 | 5 Stories |
+| **总计** | **✅ 完全覆盖** | **完成** | **56 Stories** |
+
+**Functional Requirements Coverage:**
+- ✅ AI 页面结构学习和数据提取
+- ✅ 零代码桌面应用
+- ✅ 多 AI 提供商支持（8 个）
+- ✅ 数据导出（JSON、CSV、Excel）
+- ✅ 批量爬取与任务调度
+- ✅ 三级界面策略
+- ✅ 离线模式支持（FR132）
+- ✅ 离线数据访问（FR133）
+- ✅ 离线任务队列（FR134）
+- ✅ 配置撤销功能（FR135）
+- ✅ 任务删除恢复（FR136）
+- ✅ 100% FR 覆盖（136 个功能需求）
+
+**Non-Functional Requirements Coverage:**
+- ✅ 性能：Worker Pool 模式 + 异步处理
+- ✅ 准确率：MVP 70-80%，Post-MVP 90-95%
+- ✅ 合规：GDPR + CCPA + 中国网络安全法 + 个人信息保护法
+- ✅ 可访问性：WCAG 2.1 AA
+
+---
+
+### Implementation Readiness Validation ✅
+
+**Decision Completeness:**
+- ✅ 所有关键决策已文档化，含版本号
+- ✅ 实施模式全面（命名、结构、格式、通信、流程）
+- ✅ Good/Anti-Patterns 示例提供
+- ✅ 架构师角色辩论支持决策合理性
+
+**Structure Completeness:**
+- ✅ 完整目录树定义（backend/frontend 分离）
+- ✅ 所有文件和目录命名明确
+- ✅ 集成点详细映射（数据流图）
+- ✅ Epic 到目录位置映射表
+
+**Pattern Completeness:**
+- ✅ 15 个冲突点已识别和解决
+- ✅ 命名约定全面（数据库、API、代码）
+- ✅ 通信模式完整（WebSocket、Pinia、API）
+- ✅ 流程模式覆盖（错误处理、加载状态）
+
+---
+
+### Gap Analysis Results
+
+**Critical Gaps:** 无 ✅
+
+**Important Gaps:** 已解决 ✅
+- ~~WebSocket 事件版本控制~~ → 已添加 ADR-005
+- ~~AI 提供商配置迁移~~ → 已在架构文档中说明
+- ~~三级界面状态管理~~ → 已添加 ADR-006
+- ~~错误处理策略~~ → 已添加 ADR-007
+- ~~离线架构模式~~ → 已添加 ADR-008
+- ~~撤销/重做机制~~ → 已添加 ADR-009
+
+**Nice-to-Have Gaps:**
+1. **API 文档生成** - 建议 OpenAPI/Swagger 自动生成
+2. **日志标准化** - ✅ 已在架构文档中统一（backend/app/core/logging.py）
+3. **监控指标** - ✅ 已在架构文档中定义（backend/app/api/v1/metrics.py）
+
+---
+
+### Architecture Completeness Checklist
+
+**✅ Requirements Analysis**
+- [x] 项目上下文已深入分析
+- [x] 规模和复杂度已评估（中等偏高）
+- [x] 技术约束已识别
+- [x] 跨领域关注点已映射（6 个）
+
+**✅ Architectural Decisions**
+- [x] 关键决策已文档化（含版本号）
+- [x] 技术栈已完全指定（Python + FastAPI + Vue.js + Playwright + PostgreSQL）
+- [x] 集成模式已定义（WebSocket、Celery、AI 抽象层）
+- [x] 性能考虑已解决（Worker Pool、异步处理）
+- [x] 离线架构模式已定义（ADR-008）
+- [x] 撤销/重做机制已定义（ADR-009）
+
+**✅ Implementation Patterns**
+- [x] 命名约定已建立（4 个架构师角色辩论）
+- [x] 结构模式已定义（功能组织）
+- [x] 通信模式已指定（API、WebSocket、Pinia）
+- [x] 流程模式已文档化（错误处理、加载状态）
+
+**✅ Project Structure**
+- [x] 完整目录结构已定义（backend/frontend）
+- [x] 组件边界已建立（API、服务、数据）
+- [x] 集成点已映射（Epic → 目录）
+- [x] 需求到结构映射已完成
+
+---
+
+### Architecture Readiness Assessment
+
+**Overall Status:** ✅ READY FOR IMPLEMENTATION
+
+**Confidence Level:** 高 - 基于 PRD 明确的技术选择和全面的架构决策
+
+**Key Strengths:**
+- PRD 已指定完整技术栈，无决策空白
+- 实施模式有 4 个架构师角色辩论支持，合理性充分
+- 项目结构清晰，Epic 映射完整
+- 合规性要求全面覆盖（4 套法规）
+- 离线功能架构完整（三层离线策略 + IndexedDB）
+- 撤销/恢复机制完善（命令模式 + 软删除）
+
+**Areas for Future Enhancement:**
+- WebSocket 事件版本控制（Post-MVP）
+- API 文档自动生成（OpenAPI）
+- 监控指标集成（Prometheus）
+
+---
+
+### Implementation Handoff
+
+**AI Agent Guidelines:**
+- 严格遵循所有架构决策（特别是 PRD 明确的版本号）
+- 一致使用实施模式（PEP 8、Vue.js 风格指南）
+- 尊重项目结构和边界（backend/frontend 分离）
+- 参考本文档解决所有架构问题
+
+**First Implementation Priority:**
+1. 数据库模型设计（Alembic 迁移）
+2. AI 提供商抽象层（8 个提供商接口）
+3. Playwright Worker Pool 配置
+4. 三级视图 Vue 组件
+5. 离线功能基础架构（IndexedDB + 网络状态检测）
+6. 撤销/恢复机制（配置历史栈 + 任务软删除）
+

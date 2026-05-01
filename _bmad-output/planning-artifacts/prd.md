@@ -8,25 +8,45 @@ classification:
   domain: 数据采集/开发者工具
   complexity: 中等（涉及 AI 技术，但不是高度监管的行业）
   projectContext: 绿地项目（全新产品）
-lastEdited: '2026-04-20'
+lastEdited: '2026-04-29'
 editHistory:
   - date: '2026-04-19'
     changes: '添加网络依赖说明：AI 模型可在本地执行，但爬取网站必须连接互联网以访问目标网站。修正第 8.5 节 Offline Capabilities 中的逻辑错误。'
   - date: '2026-04-20'
     changes: 'PRD 验证改进：1) 调整 Post-MVP 准确率目标从 95-98% 至 90-95%；2) 为关键 NFR 添加明确的时间约束和性能约束；3) 添加第 12 节需求可追溯性矩阵；4) 完善第 6.5 节中国网络安全法和个人信息保护法专项要求。'
+  - date: '2026-04-24'
+    changes: 'AI 模型配置完善：1) 为所有 8 个模型提供商（Ollama、OpenAI、Anthropic、Qwen、Doubao、GLM、Google、Custom）添加详细的 API Key、Base URL、支持的模型配置；2) 明确所有模型提供商（包括本地模型）都必须提供 API Key 和 Base URL；3) 添加认证机制和安全最佳实践；4) 添加 API Key 获取指南；5) 添加环境变量配置指南；6) 更新配置示例为完整多提供商配置。'
+  - date: '2026-04-28'
+    changes: 'Excel 导出功能调整到 MVP 阶段：1) 第 4.1 节 MVP 添加 Excel (.xlsx) 导出格式；2) 第 12.4 节盈利模式调整为免费版支持 Excel 导出，专业版移除"高级数据导出（Excel）"。'
+  - date: '2026-04-29'
+    changes: 'PRD 功能需求优化：1) 删除重复的 FR108（与 FR99 重复）；2) 添加 FR132-FR134 离线功能需求；3) 添加 FR135-FR136 撤销操作功能需求。'
 validation:
-  date: '2026-04-20'
-  method: 'Critique and Refine (批判与优化)'
+  date: '2026-04-28'
+  method: 'BMAD Systematic Validation (系统性验证)'
   findings:
-    strengths: 5
-    weaknesses: 5
-    improvements: 5
-  improvementsApplied:
-    - '调整 Post-MVP 准确率目标：95-98% → 90-95%'
-    - '为 NFR 添加时间约束：NFR9-NFR47 添加明确的性能/时间约束'
-    - '添加需求可追溯性矩阵：第 12 节'
-    - '完善领域特定要求：第 6.5 节中国法规专项'
-    - '调整章节编号：第 12 节 → 第 13 节'
+    strengths: 6
+    weaknesses: 2
+    improvements: 4
+    violations:
+      total: 24
+      critical: 0
+      warning: 24
+      pass: 0
+  validationSteps:
+    - '格式检测：BMAD Standard (6/6 核心章节)'
+    - '信息密度验证：Pass (4 个轻微违规)'
+    - '产品简介覆盖度：优秀 (0 个关键空白)'
+    - '可测量性验证：Warning (14 个违规，包括技术名称和数据集成选项)'
+    - '可追溯性验证：Pass (0 个可追溯性问题)'
+    - '实现泄露验证：Warning (6 个违规，主要是数据库和集成选项的技术细节)'
+    - '领域合规性验证：Pass (低复杂度领域，无需特殊合规章节)'
+    - '项目类型合规性验证：优秀 (所有必需章节存在，排除章节合理)'
+  overallAssessment: 'PRD 整体质量优秀，符合 BMAD 标准。Excel 导出功能已正确调整到 MVP 阶段。少量实现细节可优化，但不影响整体质量。'
+  recommendations:
+    - '在架构文档中添加数据库选择 ADR，解释 PostgreSQL 选择理由'
+    - '考虑将集成选项（Snowflake、BigQuery、Kafka、Tableau 等）从需求中移至架构决策部分'
+    - '将 Excel 导出调整记录同步到需求追溯性矩阵'
+  status: 'COMPLETED - 建议继续下游工作流（UX 设计、架构设计）'
 ---
 
 # Product Requirements Document - AI 驱动的通用爬虫框架
@@ -76,9 +96,9 @@ AI 驱动的通用爬虫框架通过人工智能自动学习网站结构，彻�
 
 **自适应能力**降低维护成本。当网站结构变化时，AI 能够自动适应，无需重新编写代码。这意味着维护成本几乎为零，开发者可以专注于数据价值而非技术细节。
 
-**本地部署和数据隐私**满足合规要求。所有数据存储在本地 PostgreSQL  数据库中，满足 GDPR、CCPA 等数据隐私法规要求。用户完全掌控自己的数据，无需担心云端泄露。本地部署也意味着用户可以完全控制爬取行为，遵守目标网站的服务条款和 robots.txt 规范。
+**本地部署和数据隐私**满足合规要求。所有数据存储在本地 PostgreSQL  数据库中，满足 GDPR、CCPA 等数据隐私法规要求。用户完全掌控自己的数据，无需担心云端泄露。本地部署也意味着用户能够完全控制爬取行为，遵守目标网站的服务条款和 robots.txt 规范。
 
-**网络效应和社区驱动**形成正向循环。随着用户使用，我们将积累海量的网站结构知识库。用户可以选择分享他们的爬取模板和经验，形成社区驱动的生态系统。用得越多，AI 越智能。
+**网络效应和社区驱动**形成正向循环。随着用户使用，我们将积累海量的网站结构知识库。用户可分享他们的爬取模板和经验，形成社区驱动的生态系统。用得越多，AI 越智能。
 
 ### 2.2 Project Classification
 
@@ -102,7 +122,7 @@ AI 驱动的通用爬虫框架通过人工智能自动学习网站结构，彻�
   - **MVP阶段**：AI 数据准确率 70-80%，提供人工审核和修正功能，AI从用户调整中学习
   - **Post-MVP阶段**：通过持续优化和用户反馈，AI 数据准确率提升至 90-95%
 - 准确率测量方法：通过人工抽样验证提取的数据与网页实际内容的一致性，计算准确识别的字段数量占总字段数量的比例
-- 容错机制：提供人工审核和修正功能，用户可以手动调整 AI 识别的数据字段，系统会从用户调整中学习
+- 容错机制：提供人工审核和修正功能，用户能够手动调整 AI 识别的数据字段，系统会从用户调整中学习
 - 常见网站类型包括：电商网站（商品列表、商品详情）、新闻门户（文章列表、文章详情）、博客/内容平台（文章、评论）、企业官网（产品信息、新闻动态）、视频网站（抖音、快手）（视频列表、视频详情）
 
 **顿悟时刻**
@@ -166,7 +186,7 @@ AI 驱动的通用爬虫框架通过人工智能自动学习网站结构，彻�
 **AI 自适应能力**
 - 时间指标：网站结构变化后，AI 在 48-72 小时内自动适应
   - 技术实现方案：通过持续监控网站结构变化，自动触发重新分析和模型更新流程
-  - 手动触发选项：用户可以手动触发自适应流程，无需等待自动适应
+  - 手动触发选项：用户能够手动触发自适应流程，无需等待自动适应
 - 成功率指标：网站结构变化后，AI 能够在 90% 的情况下自动适应，只有 10% 的情况需要人工干预
 - 学习指标：AI 能够从用户调整中学习，下次遇到类似变化时自动适应
 
@@ -193,7 +213,7 @@ AI 驱动的通用爬虫框架通过人工智能自动学习网站结构，彻�
 - ✅ AI 页面结构学习和数据提取（准确率 70-80%）
 - ✅ 基础反爬虫机制（请求频率控制、User-Agent 轮换）
 - ✅ 简单易用的桌面应用程序（提供 Windows .exe/.msi、macOS .dmg、Linux .deb/.rpm 安装包）
-- ✅ 数据导出功能（JSON、CSV 格式）
+- ✅ 数据导出功能（JSON、CSV、Excel (.xlsx) 格式）
 - ✅ 本地部署和 PostgreSQL 数据库存储
 
 **支持网站类型**
@@ -220,7 +240,7 @@ AI 驱动的通用爬虫框架通过人工智能自动学习网站结构，彻�
 - 高级反爬虫策略（验证码破解、IP 池等）
 - 支持更多数据类型（图片、视频、PDF）
 - 更强大的反爬虫能力
-- API 和 SDK，让开发者能够将我们的 AI 能力集成到自己的应用中
+- API 和 SDK，开发者可将 AI 能力集成到自己的应用中
 
 ### 4.3 Vision (Future)
 
@@ -233,8 +253,8 @@ AI 驱动的通用爬虫框架通过人工智能自动学习网站结构，彻�
 
 **第二阶段（2-3 年）**
 - 扩展为完整的 AI 数据平台，包含数据清洗、分析和可视化
-- 用户可以在一个平台上完成从数据采集到洞察发现的全流程
-- 提供 API 和 SDK，让开发者能够将我们的 AI 能力集成到自己的应用中
+- 用户能够在一个平台上完成从数据采集到洞察发现的全流程
+- 提供 API 和 SDK，开发者可将 AI 能力集成到自己的应用中
 
 **生态系统**
 - 成为开发者工具生态的一部分，与其他工具集成
@@ -421,7 +441,7 @@ AI 驱动的通用爬虫框架通过人工智能自动学习网站结构，彻�
 #### 数据质量需求
 - **数据准确率 95-98%**：AI 正确识别所有数据字段，无需人工干预
   - 准确率测量方法：通过人工抽样验证提取的数据与网页实际内容的一致性，计算准确识别的字段数量占总字段数量的比例
-  - 容错机制：提供人工审核和修正功能，用户可以手动调整 AI 识别的数据字段，系统会从用户调整中学习
+  - 容错机制：提供人工审核和修正功能，用户能够手动调整 AI 识别的数据字段，系统会从用户调整中学习
 - **数据格式统一**：所有数据源的数据格式统一，几乎不需要清洗
 - **数据完整性**：确保数据及时、准确、完整地更新
 
@@ -450,9 +470,9 @@ AI 驱动的通用爬虫框架通过人工智能自动学习网站结构，彻�
 - **反爬虫机制**：内置基础反爬虫策略，避免被目标网站封锁
 
 #### 社区需求
-- **社区平台**：提供社区平台，用户可以分享爬取模板和经验
-- **模板分享功能**：用户可以分享爬取模板，帮助其他用户
-- **评价和反馈系统**：用户可以对模板进行评价和反馈
+- **社区平台**：提供社区平台，用户能够分享爬取模板和经验
+- **模板分享功能**：用户能够分享爬取模板，帮助其他用户
+- **评价和反馈系统**：用户能够对模板进行评价和反馈
 - **文档和教程**：提供详细的文档和教程，帮助用户快速上手
 - **社区互动**：支持用户之间的互动和交流
 
@@ -507,7 +527,7 @@ AI 驱动的通用爬虫框架通过人工智能自动学习网站结构，彻�
 - **可解释性**：AI 模型的决策过程必须可解释，便于调试和优化
 - **自适应能力**：AI 模型必须能够自动适应网站结构变化，48-72 小时内完成适应
   - 技术实现方案：通过持续监控网站结构变化，自动触发重新分析和模型更新流程
-  - 手动触发选项：用户可以手动触发自适应流程，无需等待自动适应
+  - 手动触发选项：用户能够手动触发自适应流程，无需等待自动适应
 
 **性能约束**
 - **并发爬取**：支持并发爬取，提高爬取效率
@@ -599,11 +619,11 @@ AI 驱动的通用爬虫框架通过人工智能自动学习网站结构，彻�
 
 **产品实现要求**
 - **数据本地存储**：所有数据存储在本地 PostgreSQL 数据库中，满足网络安全法对境内存储的要求
-- **个人信息识别**：系统应能够识别和标记采集到的个人信息字段（如姓名、电话、邮箱、身份证号等）
+- **个人信息识别**：能够识别和标记采集到的个人信息字段（如姓名、电话、邮箱、身份证号等）
 - **用户同意机制**：采集个人信息前，应获得用户的明确同意，并提供撤回同意的选项
 - **数据访问控制**：实施严格的访问控制，只有授权用户才能访问敏感数据
 - **数据加密**：所有敏感数据在存储和传输过程中均加密保护
-- **数据删除功能**：用户可以请求删除其个人信息，系统应在30天内完成删除
+- **数据删除功能**：用户能够请求删除其个人信息，系统在30天内完成删除
 - **合规性报告**：定期生成合规性报告，记录数据处理活动
 
 **《中华人民共和国个人信息保护法》（2021年11月1日实施）**
@@ -639,20 +659,20 @@ AI 驱动的通用爬虫框架通过人工智能自动学习网站结构，彻�
 
 **产品实现要求**
 - **敏感信息识别和分类**：
-  - 系统应能够自动识别敏感个人信息字段
+  - 能够自动识别敏感个人信息字段
   - 对敏感个人信息进行分类标记和特殊保护
-  - 提供敏感信息配置选项，用户可以选择不采集敏感信息
+  - 提供敏感信息配置选项，用户可选择不采集敏感信息
 
 - **同意管理**：
   - 首次使用产品时，显示个人信息保护声明，获得用户同意
-  - 提供同意管理的用户界面，用户可以查看、修改、撤回同意
+  - 提供同意管理的用户界面，用户可查看、修改、撤回同意
   - 记录同意历史，包括同意时间、同意范围、撤回时间等
 
 - **用户权利实现**：
-  - 提供数据导出功能，用户可以导出其个人信息
-  - 提供数据更正功能，用户可以更正不准确的个人信息
-  - 提供数据删除功能，用户可以请求删除其个人信息
-  - 提供数据访问记录查询功能，用户可以查看其数据的访问记录
+  - 提供数据导出功能，用户能够导出其个人信息
+  - 提供数据更正功能，用户能够更正不准确的个人信息
+  - 提供数据删除功能，用户能够请求删除其个人信息
+  - 提供数据访问记录查询功能，用户能够查看其数据的访问记录
 
 - **数据安全措施**：
   - 数据分类分级：根据信息的敏感程度进行分类分级保护
@@ -814,13 +834,13 @@ AI 驱动的通用爬虫框架通过人工智能自动学习网站结构，彻�
 
 **AI 模型失效风险**
 - **风险**：AI 模型可能无法准确识别某些网站结构
-- **缓解**：提供手动选择器编辑功能，让用户可以手动编写选择器
-- **缓解**：提供传统爬虫框架集成，让用户可以使用 Scrapy、Puppeteer 等
+- **缓解**：提供手动选择器编辑功能，用户可手动编写选择器
+- **缓解**：提供传统爬虫框架集成，让用户能够使用 Scrapy、Puppeteer 等
 
 **爬虫被封锁风险**
 - **风险**：爬虫可能被目标网站封锁
 - **缓解**：实施反反爬虫策略，包括 IP 轮换、User-Agent 轮换、随机延迟等
-- **缓解**：提供社区支持，让用户可以分享和获取帮助
+- **缓解**：提供社区支持，让用户能够分享和获取帮助
 
 基于项目类型（本地部署的桌面/命令行工具），我们定义了平台特定的技术要求和实现考虑。
 
@@ -926,69 +946,126 @@ AI 驱动的通用爬虫框架通过人工智能自动学习网站结构，彻�
 
 **支持的AI模型提供商**
 
-系统支持多种AI模型提供商，用户可以根据需求选择本地模型或云端模型：
+系统支持多种AI模型提供商，用户能够根据需求选择本地模型或云端模型：
 
 **本地模型提供商**
+
 - **Ollama**：本地部署的开源大语言模型，支持多种模型（Llama、Mistral、Qwen等）
+  - **配置参数**：
+    - API Key：`${OLLAMA_API_KEY}`（本地模型使用占位符字符串即可，如 "ollama-local"）
+    - Base URL：`http://localhost:11434/v1`（默认本地端口）
+    - 模型名称：`llama3:8b`、`llama3:70b`、`mistral`、`qwen2:7b`、`gemma2:9b`
   - 优势：完全本地化，数据隐私保护
   - 适用场景：对数据隐私要求极高的用户，离线环境
   - 资源需求：需要足够的本地计算资源（CPU/GPU、内存）
 
 **云端模型提供商**
+
 - **OpenAI**：GPT-4、GPT-3.5-turbo等模型
-  - 配置参数：API Key、Base URL（可选）、模型名称
+  - **配置参数**：
+    - API Key：`${OPENAI_API_KEY}`（从 https://platform.openai.com/api-keys 获取）
+    - Base URL：`${OPENAI_BASE_URL}`（官方：https://api.openai.com/v1）
+    - 模型名称：`gpt-4o`、`gpt-4-turbo`、`gpt-3.5-turbo`、`o1-preview`、`o1-mini`
   - 优势：强大的推理能力，持续更新，高准确率
   - 适用场景：需要最高准确率的用户，愿意使用云端服务
 
 - **Anthropic**：Claude 3.5 Sonnet、Claude 3 Opus等模型
-  - 配置参数：API Key、Base URL（可选）、模型名称
+  - **配置参数**：
+    - API Key：`${ANTHROPIC_API_KEY}`（从 https://console.anthropic.com/settings/keys 获取）
+    - Base URL：`https://api.anthropic.com/v1`
+    - 模型名称：`claude-3-5-sonnet`、`claude-3-opus`、`claude-3-haiku`
   - 优势：优秀的推理能力，长上下文支持
   - 适用场景：复杂网页分析，需要深度理解
 
 - **Qwen（通义千问）**：阿里云提供的大语言模型
-  - 配置参数：API Key、Base URL、模型名称
+  - **配置参数**：
+    - API Key：`${QWEN_API_KEY}`（从 https://dashscope.console.aliyun.com/apiKey 获取）
+    - Base URL：`https://dashscope.aliyuncs.com/compatible-mode/v1`
+    - 模型名称：`qwen-turbo`、`qwen-plus`、`qwen-max`、`qwen-vl-max`、`qwen-long`
   - 优势：中文理解能力强，国内访问稳定
   - 适用场景：中文网站爬取，国内用户
 
 - **豆包（Doubao）**：字节跳动提供的大语言模型
-  - 配置参数：API Key、Base URL、模型名称
+  - **配置参数**：
+    - API Key：`${DOUBAO_API_KEY}`（从 https://console.volcengine.com/ark 获取）
+    - Base URL：`https://ark.cn-beijing.volces.com/api/v3`（根据地域选择）
+    - 模型名称：`doubao-pro-32k`、`doubao-pro-4k`、`doubao-lite-4k`、`doubao-132k`
   - 优势：性价比高，中文优化
   - 适用场景：中文网站爬取，成本敏感用户
 
 - **GLM（智谱AI）**：智谱AI提供的大语言模型
-  - 配置参数：API Key、Base URL、模型名称
+  - **配置参数**：
+    - API Key：`${GLM_API_KEY}`（从 https://open.bigmodel.cn/usercenter/apikeys 获取）
+    - Base URL：`https://open.bigmodel.cn/api/paas/v4`
+    - 模型名称：`glm-4`、`glm-4-flash`、`glm-4v-plus`、`glm-3-turbo`
   - 优势：中文理解能力强，多模态支持
   - 适用场景：中文网站爬取，需要多模态能力
 
 - **Google Gemini**：Google提供的大语言模型
-  - 配置参数：API Key、Base URL（可选）、模型名称
+  - **配置参数**：
+    - API Key：`${GEMINI_API_KEY}`（从 https://makersuite.google.com/app/apikey 获取）
+    - Base URL：`https://generativelanguage.googleapis.com/v1beta`
+    - 模型名称：`gemini-2.0-flash-exp`、`gemini-2.5-pro-exp`、`gemini-1.5-pro`、`gemini-1.5-flash`
   - 优势：Google技术支持，多模态能力强
   - 适用场景：需要Google生态集成的用户
 
 - **其他兼容OpenAI API的提供商**：支持任何兼容OpenAI API格式的第三方服务
-  - 配置参数：API Key、Base URL、模型名称
+  - **配置参数**：
+    - API Key：`${CUSTOM_API_KEY}`（根据具体服务商说明获取）
+    - Base URL：`${CUSTOM_BASE_URL}`（根据具体服务商提供的端点）
+    - 模型名称：取决于具体服务支持的模型
   - 优势：灵活性高，支持自定义部署
   - 适用场景：企业内部部署，特殊需求
+
+**配置要求（所有模型提供商）**
+
+所有 AI 模型提供商（包括本地模型和云端模型）都必须配置以下参数：
+
+**必需参数**：
+- **API Key**：身份验证密钥
+  - 云端模型：从官方平台获取的有效 API Key
+  - 本地模型：使用占位符字符串（如 "ollama-local"）
+
+- **Base URL**：API 服务端点地址
+  - 云端模型：官方 API 端点或自定义代理地址
+  - 本地模型：本地服务地址（默认 http://localhost:11434/v1）
+
+**安全要求**：
+- API Key 不得硬编码在配置文件中
+- 必须通过环境变量或密钥管理系统提供
+- 配置文件中仅使用环境变量占位符
 
 **AI模型配置架构**
 
 **统一抽象层**
 - 系统提供统一的AI模型接口，支持多种提供商的无缝切换
-- 用户可以在设置中配置多个模型提供商，并设置优先级
+- 用户能够在设置中配置多个模型提供商，并设置优先级
 - 系统自动选择最佳模型或根据用户指定使用特定模型
 
 **配置管理**
-- **模型提供商配置**：
-  - 提供商名称
-  - API Key（云端模型必需）
-  - Base URL（可选，用于自定义端点）
-  - 模型名称
-  - 模型参数（温度、最大token数等）
-  - 优先级设置
+
+- **模型提供商配置参数**：
+  - **必需参数**：
+    - 提供商名称
+    - API Key：身份验证密钥，用于 API 访问认证
+    - Base URL：API 服务端点地址，用于发起 API 请求
+
+  - **可选参数**：
+    - 模型名称：指定使用的具体模型版本
+    - 模型参数：
+      - temperature：控制输出的随机性（0.0-2.0）
+      - max_tokens：最大生成的 token 数量
+      - top_p：核采样参数（0.0-1.0）
+      - top_k：top-k 采样参数
+      - presence_penalty：存在惩罚
+      - frequency_penalty：频率惩罚
+    - 超时设置：请求超时时间（秒）
+    - 重试策略：最大重试次数和重试间隔
+    - 优先级设置：多模型时的优先级
 
 - **模型选择策略**：
   - 自动选择：系统根据任务复杂度自动选择最合适的模型
-  - 手动选择：用户可以为特定任务指定使用的模型
+  - 手动选择：用户能够为特定任务指定使用的模型
   - 降级策略：当首选模型不可用时，自动切换到备用模型
 
 - **性能监控**：
@@ -1013,44 +1090,242 @@ AI 驱动的通用爬虫框架通过人工智能自动学习网站结构，彻�
   - 支持按任务类型分配不同模型
 
 **模型切换和回退**
-- **无缝切换**：用户可以在不中断任务的情况下切换模型
+- **无缝切换**：用户能够在不中断任务的情况下切换模型
 - **智能回退**：当云端模型不可用时，自动回退到本地模型
 - **混合使用**：同一任务可以同时使用多个模型，取最佳结果
+
+**认证机制和安全最佳实践**
+
+**API Key 认证**：
+- 所有 AI API 请求必须携带有效的 API Key 进行身份验证
+- API Key 通过 HTTP Header 传递（如 `Authorization: Bearer {api_key}`）
+- 支持 API Key 轮换机制，定期更新密钥以提高安全性
+
+**安全存储要求**：
+- API Key 不得硬编码在源代码中
+- 必须通过环境变量或安全的密钥管理系统存储
+- 配置文件中使用占位符引用（如 `${OPENAI_API_KEY}`）
+- 支持操作系统密钥环/保险箱（如 Windows Credential Manager、macOS Keychain）
+
+**访问控制**：
+- 支持为不同用户角色分配不同的 AI 模型访问权限
+- 敏感操作需要二次验证
+- 记录所有 API 调用日志用于审计
+
+**数据传输安全**：
+- 所有 API 通信必须使用 HTTPS 加密
+- 支持 TLS 1.2+ 协议
+- 证书验证机制确保通信安全
+
+**API Key 获取指南**
+
+**OpenAI**：
+1. 访问 https://platform.openai.com
+2. 登录或注册账号
+3. 进入 Settings → API keys
+4. 点击 "Create new secret key"
+5. 复制生成的 API Key（仅显示一次）
+6. 设置环境变量：`OPENAI_API_KEY=sk-proj-xxx`
+
+**Anthropic (Claude)**：
+1. 访问 https://console.anthropic.com
+2. 登录或注册账号
+3. 进入 Settings → API Keys
+4. 点击 "Create Key"
+5. 复制生成的 API Key
+6. 设置环境变量：`ANTHROPIC_API_KEY=sk-ant-xxx`
+
+**Qwen（通义千问）**：
+1. 访问 https://dashscope.console.aliyun.com
+2. 登录阿里云账号
+3. 进入 API-KEY 管理
+4. 点击 "创建 API-KEY"
+5. 复制生成的 API Key
+6. 设置环境变量：`QWEN_API_KEY=sk-xxx`
+
+**豆包（Doubao）**：
+1. 访问 https://console.volcengine.com/ark
+2. 登录火山引擎账号
+3. 进入 API Key 管理
+4. 创建新的 API Key
+5. 复制生成的 API Key
+6. 设置环境变量：`DOUBAO_API_KEY=xxx`
+
+**GLM（智谱AI）**：
+1. 访问 https://open.bigmodel.cn
+2. 登录或注册账号
+3. 进入 API Key 管理
+4. 生成新的 API Key
+5. 复制生成的 API Key
+6. 设置环境变量：`GLM_API_KEY=xxx`
+
+**Google Gemini**：
+1. 访问 https://makersuite.google.com
+2. 登录 Google 账号
+3. 进入 API Keys 页面
+4. 创建新的 API Key
+5. 复制生成的 API Key
+6. 设置环境变量：`GEMINI_API_KEY=xxx`
+
+**Ollama（本地）**：
+- 本地模型无需真实的 API Key
+- 使用占位符字符串即可：`OLLAMA_API_KEY="ollama-local"`
+
+**环境变量配置指南**
+
+**Windows**：
+```powershell
+# 临时设置（当前会话）
+set OPENAI_API_KEY=sk-proj-xxx
+
+# 永久设置（用户级别）
+setx OPENAI_API_KEY "sk-proj-xxx"
+setx OPENAI_BASE_URL "https://api.openai.com/v1"
+
+# 系统级别（需要管理员权限）
+setx /M OPENAI_API_KEY "sk-proj-xxx"
+```
+
+**Linux/macOS**：
+```bash
+# 临时设置（当前会话）
+export OPENAI_API_KEY=sk-proj-xxx
+
+# 永久设置（添加到 ~/.bashrc 或 ~/.zshrc）
+echo 'export OPENAI_API_KEY="sk-proj-xxx"' >> ~/.bashrc
+echo 'export OPENAI_BASE_URL="https://api.openai.com/v1"' >> ~/.bashrc
+source ~/.bashrc
+```
+
+**推荐的环境变量命名规范**：
+```
+OPENAI_API_KEY、OPENAI_BASE_URL
+ANTHROPIC_API_KEY、ANTHROPIC_BASE_URL
+QWEN_API_KEY、QWEN_BASE_URL
+DOUBAO_API_KEY、DOUBAO_BASE_URL
+GLM_API_KEY、GLM_BASE_URL
+GEMINI_API_KEY、GEMINI_BASE_URL
+OLLAMA_API_KEY、OLLAMA_BASE_URL
+```
+
+**验证环境变量配置**：
+```bash
+# Windows
+echo %OPENAI_API_KEY%
+
+# Linux/macOS
+echo $OPENAI_API_KEY
+```
 
 **配置示例**
 
 ```yaml
 ai_providers:
+  # 本地模型
   local:
     - name: "Ollama"
       enabled: true
+      api_key: "${OLLAMA_API_KEY}"
+      base_url: "http://localhost:11434/v1"
       model: "llama3:8b"
       priority: 1
-  
+      timeout: 60
+      max_retries: 3
+      max_tokens: 4096
+      temperature: 0.7
+
+  # 云端模型
   cloud:
     - name: "OpenAI"
       enabled: true
       api_key: "${OPENAI_API_KEY}"
-      base_url: "https://api.openai.com/v1"
+      base_url: "${OPENAI_BASE_URL}"
       model: "gpt-4o"
       priority: 2
+      max_tokens: 8192
+      temperature: 0.3
+      timeout: 60
+      max_retries: 3
+
+    - name: "Anthropic"
+      enabled: true
+      api_key: "${ANTHROPIC_API_KEY}"
+      base_url: "https://api.anthropic.com/v1"
+      model: "claude-3-5-sonnet"
+      priority: 3
       max_tokens: 4096
       temperature: 0.3
-    
+      timeout: 60
+      max_retries: 3
+
     - name: "Qwen"
       enabled: true
       api_key: "${QWEN_API_KEY}"
       base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
-      model: "qwen-turbo"
-      priority: 3
+      model: "qwen-plus"
+      priority: 4
       max_tokens: 4096
       temperature: 0.3
+      timeout: 60
+      max_retries: 3
 
-model_selection_strategy: "auto"  # auto, manual, cost_optimized
+    - name: "Doubao"
+      enabled: false
+      api_key: "${DOUBAO_API_KEY}"
+      base_url: "https://ark.cn-beijing.volces.com/api/v3"
+      model: "doubao-pro-32k"
+      priority: 5
+      max_tokens: 32768
+      temperature: 0.3
+      timeout: 60
+      max_retries: 3
+
+    - name: "GLM"
+      enabled: false
+      api_key: "${GLM_API_KEY}"
+      base_url: "https://open.bigmodel.cn/api/paas/v4"
+      model: "glm-4-flash"
+      priority: 6
+      max_tokens: 4096
+      temperature: 0.3
+      timeout: 60
+      max_retries: 3
+
+    - name: "Google"
+      enabled: false
+      api_key: "${GEMINI_API_KEY}"
+      base_url: "https://generativelanguage.googleapis.com/v1beta"
+      model: "gemini-1.5-pro"
+      priority: 7
+      max_tokens: 8192
+      temperature: 0.3
+      timeout: 60
+      max_retries: 3
+
+    # 通用 OpenAI 兼容提供商
+    - name: "Custom"
+      enabled: false
+      api_key: "${CUSTOM_API_KEY}"
+      base_url: "${CUSTOM_BASE_URL}"
+      model: "custom-model"
+      priority: 8
+      max_tokens: 4096
+      temperature: 0.3
+      timeout: 60
+      max_retries: 3
+
+# 模型选择策略
+model_selection_strategy: "auto"  # auto, manual, cost_optimized, quality_optimized
+
+# 降级策略
 fallback_enabled: true
+fallback_timeout: 3  # 秒
+
+# 成本管理
 cost_budget:
   monthly_limit: 100.0  # USD
   alert_threshold: 80.0  # USD
+  track_by_provider: true
 ```
 
 **离线更新**
@@ -1099,7 +1374,7 @@ cost_budget:
 **AI 页面分析和数据提取**
 - AI 自动识别页面结构
 - AI 自动提取数据字段
-- 数据准确率 95-98%
+- MVP阶段数据准确率70-80%，提供人工审核和修正功能，AI从用户调整中学习
 - 支持常见网站类型（电商、新闻门户、博客、企业官网）
 
 **用户界面和交互**
@@ -1186,14 +1461,14 @@ cost_budget:
 
 **技术风险：**
 - **风险**：AI 模型可能无法准确识别某些网站结构
-- **缓解**：提供手动选择器编辑功能，让用户可以手动编写选择器
-- **缓解**：提供传统爬虫框架集成，让用户可以使用 Scrapy、Puppeteer 等
+- **缓解**：提供手动选择器编辑功能，用户可手动编写选择器
+- **缓解**：提供传统爬虫框架集成，让用户能够使用 Scrapy、Puppeteer 等
 - **缓解**：实施 AI 模型监控，及时发现和修复模型失效问题
 
 **市场风险：**
 - **风险**：用户可能不愿意尝试新的爬虫工具
 - **缓解**：提供详细的文档和教程，帮助用户快速上手
-- **缓解**：提供社区支持，让用户可以分享和获取帮助
+- **缓解**：提供社区支持，让用户能够分享和获取帮助
 - **缓解**：通过用户测试验证产品价值，收集用户反馈
 
 **资源风险：**
@@ -1255,6 +1530,8 @@ cost_budget:
 - FR35: Users can access CLI interface for advanced operations
 - FR36: Users can customize interface settings and preferences
 - FR37: Users can receive notifications for crawling completion and errors
+- FR135: Users can undo recent configuration changes
+- FR136: Users can undo task deletion operations
 
 ### 10.3 Data Management and Export
 
@@ -1306,6 +1583,9 @@ cost_budget:
 - FR74: System can check for updates automatically
 - FR75: Users can perform offline updates using installation packages
 - FR76: System can rollback to previous versions if update fails
+- FR132: System can operate in offline mode without internet connectivity
+- FR133: Users can access previously crawled data while offline
+- FR134: System can queue crawling tasks for execution when connectivity is restored
 
 ### 10.7 System Integration
 
@@ -1346,7 +1626,6 @@ cost_budget:
 - FR105: Users can share crawler templates
 - FR106: Users can browse community template library
 - FR107: Users can download and use community templates
-- FR108: Users can rate and review templates
 - FR109: Users can follow other users
 - FR110: Users can view followed users' activities
 - FR111: Users can create collaborative projects
@@ -1489,6 +1768,7 @@ cost_budget:
 - NFR5: System shall support batch crawling of up to 1,000 URLs in a single task
 - NFR6: System shall maintain 99.9% uptime during business hours
 - NFR7: System shall optimize network requests to minimize bandwidth usage
+- NFR8: System shall achieve 80% task completion rate for first-time users
 
 ### 11.2 Security
 
@@ -1588,40 +1868,9 @@ cost_budget:
 - NFR64: System shall support export and import of AI model provider configurations
 - NFR65: System shall maintain backward compatibility with existing AI model provider configurations
 
-### 11.7 Maintenance Cost Reduction
-
-- NFR48: System shall reduce maintenance time by 70% compared to traditional crawlers
-- NFR49: System shall automatically detect and adapt to website structure changes
-- NFR50: System shall provide automated error recovery and retry mechanisms
-- NFR51: System shall generate actionable error messages for troubleshooting
-- NFR52: System shall provide comprehensive logging for issue diagnosis
-- NFR53: System shall support automated testing and validation
-- NFR54: System shall minimize configuration changes required for new websites
-
-### 11.8 Local Deployment Resources
-
-- NFR55: System shall run on machines with minimum 4GB RAM
-- NFR56: System shall run on machines with minimum 2 CPU cores
-- NFR57: System shall require maximum 10GB disk space for installation
-- NFR58: System shall support offline operation without internet connectivity
-- NFR59: System shall cache AI models locally for faster inference
-- NFR60: System shall optimize resource usage to not impact user's other work
-
-### 11.9 Anti-Crawling Mechanisms
-
-- NFR61: System shall implement request rate limiting to avoid detection
-- NFR62: System shall rotate User-Agent strings for each request
-- NFR63: System shall support proxy pool configuration
-- NFR64: System shall automatically handle CAPTCHAs with 90% success rate
-- NFR65: System shall simulate human behavior patterns (delays, scrolling, mouse movement)
-- NFR66: System shall detect and respond to IP blocking
-- NFR67: System shall respect robots.txt rules automatically
-- NFR68: System shall provide configurable anti-crawling settings
-- NFR69: System shall monitor and adapt to anti-crawling countermeasures
-
 基于功能需求、项目类型要求和领域特定约束，我们定义了非功能需求，确保产品在性能、安全性、可扩展性等方面满足质量标准。这些 NFRs 将指导架构设计和性能优化。
 
-### 11.10 Architecture Decision Records
+### 11.7 Architecture Decision Records
 
 **ADR-006: Performance Optimization Strategy**
 - **Decision**: Implement multi-layered caching (page cache, model cache, result cache)
@@ -1681,7 +1930,7 @@ cost_budget:
 **用户采用风险**
 - **风险**：用户可能不愿意尝试新的爬虫工具
 - **缓解**：提供详细的文档和教程，帮助用户快速上手
-- **缓解**：提供社区支持，让用户可以分享和获取帮助
+- **缓解**：提供社区支持，让用户能够分享和获取帮助
 
 ## 12. Requirements Traceability Matrix
 
@@ -1695,12 +1944,12 @@ cost_budget:
 | FR2 | Users can input URLs for crawling | 5.1 旅程1, 5.1 旅程2, 5.1 旅程3 | 第 4.1 节 MVP 核心功能 |
 | FR3 | AI can analyze page structure automatically | (所有用户旅程) | 第 2.1 节 AI 自动学习页面结构 |
 | FR4 | Users can view extracted data | 5.1 旅程1, 5.2 旅程1 | 第 4.1 节 MVP 核心功能 |
-| FR5 | Users can export data as JSON/CSV | 5.1 旅程1 | 第 4.1 节 MVP 核心功能 |
+| FR5 | Users can export data as JSON/CSV/Excel | 5.1 旅程1 | 第 4.1 节 MVP 核心功能 |
 | FR6 | System supports batch crawling | 5.1 旅程3, 5.2 旅程3 | 第 4.1 节 MVP 核心功能 |
 | FR7 | AI adapts to website structure changes | 5.1 旅程2, 5.2 旅程2 | 第 3.3 节 AI 自适应能力 |
 | FR8 | Users can manually correct AI-extracted data | 5.1 旅程1, 5.2 旅程1 | 第 3.1 节 容错机制 |
-| FR9 | System provides monitoring dashboard | 5.1 旅程2, 5.2 旅程2, 5.2 旅程3 | 第 4.2 节 Growth Features |
-| FR10 | Users can schedule crawling tasks | 5.2 旅程2 | 第 4.2 节 Growth Features |
+| FR49 | Users can schedule crawling tasks for specific times | 5.2 旅程2 | 第 4.2 节 Growth Features |
+| FR114 | Users can view real-time monitoring dashboard | 5.1 旅程2, 5.2 旅程2, 5.2 旅程3 | 第 4.2 节 Growth Features |
 | FR11 | System stores data locally in PostgreSQL | (所有用户旅程) | 第 2.1 节 本地部署和数据隐私 |
 | FR12 | System implements anti-crawling mechanisms | (所有用户旅程) | 第 4.1 节 MVP 核心功能 |
 | FR86 | System stores all data locally without cloud upload | (所有用户旅程) | 第 2.1 节 本地部署和数据隐私 |
@@ -1710,11 +1959,11 @@ cost_budget:
 
 | 用户旅程 | 关键需求 | 涉及需求 ID |
 |---------|---------|------------|
-| 5.1 旅程1 - 张伟 (电商数据分析师) | 零代码爬取、批量处理、数据导出 | FR1, FR2, FR3, FR4, FR5, FR6 |
-| 5.1 旅程2 - 李明 (新闻聚合平台开发者) | 批量管理、自动适应、监控 | FR2, FR3, FR7, FR9 |
+| 5.1 旅程1 - 张伟 (电商数据分析师) | 零代码爬取、批量处理、数据导出（JSON/CSV/Excel） | FR1, FR2, FR3, FR4, FR5, FR6 |
+| 5.1 旅程2 - 李明 (新闻聚合平台开发者) | 批量管理、自动适应、监控 | FR2, FR3, FR7, FR114 |
 | 5.1 旅程3 - 王芳 (市场研究分析师) | 零代码体验、多平台支持 | FR1, FR2, FR3, FR4 |
 | 5.2 旅程1 - 陈强 (大数据平台工程师) | ETL 集成、数据质量 | FR3, FR4, FR77, FR78 |
-| 5.2 旅程2 - 刘洋 (数据仓库工程师) | 调度管理、监控告警 | FR9, FR10, FR116 |
+| 5.2 旅程2 - 刘洋 (数据仓库工程师) | 调度管理、监控告警 | FR49, FR114, FR116 |
 | 5.2 旅程3 - 赵敏 (实时数据处理工程师) | 实时爬取、流式集成 | FR3, FR78, FR79 |
 
 ### 12.3 输入文档到需求映射
@@ -1832,12 +2081,12 @@ cost_budget:
 
 **免费增值模式（Freemium）**
 - **免费版**：
-  - 功能限制：单个网址爬取、基础数据导出（JSON/CSV）
+  - 功能限制：单个网址爬取、基础数据导出（JSON/CSV/Excel）
   - 使用限制：每月最多 100 次爬取
   - 目标：吸引大量用户，建立用户基础
 - **专业版（Professional）**：
   - 价格：99 元/月 或 999 元/年
-  - 功能：批量爬取、高级数据导出（Excel）、任务调度、爬取历史记录、优先支持
+  - 功能：批量爬取、任务调度、爬取历史记录、优先支持
   - 目标：满足专业用户需求，产生收入
 - **企业版（Enterprise）**：
   - 价格：499 元/月 或 4,999 元/年
