@@ -1363,6 +1363,140 @@
             line-height: 1.6;
         }
 
+        /* 新增：UX 模式分析样式 */
+        .ux-patterns-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .pattern-card {
+            padding: 25px;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border-left: 4px solid var(--primary);
+            transition: all 0.3s;
+        }
+
+        .pattern-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.15);
+        }
+
+        .pattern-card h4 {
+            margin-bottom: 15px;
+            color: var(--primary);
+            font-size: 1.1rem;
+        }
+
+        .pattern-card ul {
+            padding-left: 20px;
+            color: var(--text-secondary);
+            line-height: 1.8;
+        }
+
+        /* 新增：设计方向决策样式 */
+        .design-direction-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .direction-item {
+            padding: 15px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .direction-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+        }
+
+        .direction-item .icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .direction-item .title {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .direction-item .description {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        /* 新增：用户旅程样式 */
+        .journey-flow {
+            background: var(--bg-secondary);
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+        }
+
+        .journey-flow h4 {
+            margin-bottom: 15px;
+            color: var(--text-primary);
+        }
+
+        .flow-questions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .flow-question {
+            padding: 15px;
+            background: var(--bg-primary);
+            border-radius: 8px;
+        }
+
+        .flow-question .question {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: var(--primary);
+        }
+
+        .flow-question .answer {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        /* 新增：UX 一致性模式样式 */
+        .consistency-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+        }
+
+        .consistency-item {
+            padding: 20px;
+            background: var(--bg-secondary);
+            border-radius: 10px;
+            border-left: 4px solid var(--primary);
+            transition: all 0.3s;
+        }
+
+        .consistency-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+        }
+
+        .consistency-item h4 {
+            margin-bottom: 10px;
+            color: var(--primary);
+        }
+
+        .consistency-item p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
         @media (max-width: 768px) {
             .view-dashboard .app-mockup {
                 grid-template-columns: 1fr;
@@ -1622,6 +1756,10 @@
                 <li><a href="#success-failure" class="toc-link">📊 成功流程 vs 失败流程</a></li>
                 <li><a href="#offline-mode" class="toc-link">📴 离线模式支持</a></li>
                 <li><a href="#undo-redo" class="toc-link">↩️ 撤销/重做机制</a></li>
+                <li><a href="#ux-patterns" class="toc-link">💡 UX 模式分析和灵感</a></li>
+                <li><a href="#design-decisions" class="toc-link">🎯 设计方向决策</a></li>
+                <li><a href="#user-journeys" class="toc-link">🛤️ 用户旅程流程</a></li>
+                <li><a href="#ux-consistency" class="toc-link">🔄 UX 一致性模式</a></li>
                 <li><a href="#conclusion" class="toc-link">🎯 结论</a></li>
             </ul>
         </div>
@@ -2301,6 +2439,346 @@
             </div>
         </div>
 
+        <!-- UX 模式分析和灵感 -->
+        <div class="section" id="ux-patterns">
+            <h2 class="section-title">💡 UX 模式分析和灵感</h2>
+
+            <h3 style="margin: 25px 0 15px; color: var(--primary);">启发产品分析</h3>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px;">
+                <div style="padding: 25px; background: var(--bg-secondary); border-radius: 12px; border-left: 4px solid #007ACC;">
+                    <h4 style="margin-bottom: 15px; color: #007ACC; font-size: 1.1rem;">🖥️ VSCode（开发者）</h4>
+                    <ul style="padding-left: 20px; color: var(--text-secondary); line-height: 1.8;">
+                        <li><strong>优雅解决的问题：</strong>多功能开发环境，从简单到复杂都可以满足</li>
+                        <li><strong>引导体验：</strong>欢迎界面 + 示例项目，快速上手</li>
+                        <li><strong>导航和信息层级：</strong>左侧活动栏 + 资源管理器 + 编辑器区域</li>
+                        <li><strong>创新交互：</strong>命令面板（Ctrl+Shift+P），快速访问所有功能</li>
+                        <li><strong>视觉设计：</strong>深色模式、最小化 UI、专注代码</li>
+                        <li><strong>错误处理：</strong>内联错误提示 + 问题面板，清晰的错误位置</li>
+                    </ul>
+                </div>
+
+                <div style="padding: 25px; background: var(--bg-secondary); border-radius: 12px; border-left: 4px solid #10A37F;">
+                    <h4 style="margin-bottom: 15px; color: #10A37F; font-size: 1.1rem;">🤖 ChatGPT（普通用户）</h4>
+                    <ul style="padding-left: 20px; color: var(--text-secondary); line-height: 1.8;">
+                        <li><strong>优雅解决的问题：</strong>AI 对话界面，无需学习即可使用</li>
+                        <li><strong>引导体验：</strong>空的聊天界面 + 示例问题，鼓励首次使用</li>
+                        <li><strong>导航和信息层级：</strong>极简界面，只有一个输入框，所有复杂性隐藏</li>
+                        <li><strong>创新交互：</strong>流式输出，实时看到 AI 的响应</li>
+                        <li><strong>视觉设计：</strong>清爽、干净、聚焦内容</li>
+                        <li><strong>错误处理：</strong>友好的错误提示，通常只是"重新生成"按钮</li>
+                    </ul>
+                </div>
+
+                <div style="padding: 25px; background: var(--bg-secondary); border-radius: 12px; border-left: 4px solid #F2C811;">
+                    <h4 style="margin-bottom: 15px; color: #F2C811; font-size: 1.1rem;">📊 Power BI（数据工程师/分析师）</h4>
+                    <ul style="padding-left: 20px; color: var(--text-secondary); line-height: 1.8;">
+                        <li><strong>优雅解决的问题：</strong>数据可视化和分析，从数据到洞察</li>
+                        <li><strong>引导体验：</strong>示例报告 + 拖拽式界面，降低学习曲线</li>
+                        <li><strong>导航和信息层级：</strong>左侧报告选项卡 + 右侧可视化面板 + 底部数据</li>
+                        <li><strong>创新交互：</strong>拖拽式可视化创建，即时预览</li>
+                        <li><strong>视觉设计：</strong>专业、丰富、但不过于复杂</li>
+                        <li><strong>错误处理：</strong>数据连接失败时的清晰指引</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3 style="margin: 25px 0 15px; color: var(--primary);">可迁移的 UX 模式</h3>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-bottom: 25px;">
+                <div style="padding: 20px; background: var(--bg-secondary); border-radius: 10px;">
+                    <h4 style="margin-bottom: 10px; color: var(--primary);">🧭 导航模式</h4>
+                    <ul style="padding-left: 20px; color: var(--text-secondary); font-size: 0.9rem;">
+                        <li>左侧活动栏 + 主内容区域（VSCode）</li>
+                        <li>简洁界面 + 隐藏复杂性（ChatGPT）</li>
+                        <li>示例模板引导（ChatGPT）</li>
+                    </ul>
+                </div>
+
+                <div style="padding: 20px; background: var(--bg-secondary); border-radius: 10px;">
+                    <h4 style="margin-bottom: 10px; color: var(--primary);">🎯 交互模式</h4>
+                    <ul style="padding-left: 20px; color: var(--text-secondary); font-size: 0.9rem;">
+                        <li>命令面板/快捷键（VSCode）</li>
+                        <li>流式输出（ChatGPT）</li>
+                        <li>拖拽式操作（Power BI）</li>
+                    </ul>
+                </div>
+
+                <div style="padding: 20px; background: var(--bg-secondary); border-radius: 10px;">
+                    <h4 style="margin-bottom: 10px; color: var(--primary);">🎨 视觉模式</h4>
+                    <ul style="padding-left: 20px; color: var(--text-secondary); font-size: 0.9rem;">
+                        <li>深色模式支持（三个产品都有）</li>
+                        <li>最小化、聚焦内容（VSCode/ChatGPT）</li>
+                        <li>专业但不复杂（Power BI）</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3 style="margin: 25px 0 15px; color: var(--error);">反模式（要避免）</h3>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+                <div style="padding: 20px; background: rgba(239, 68, 68, 0.1); border-radius: 10px; border-left: 4px solid var(--error);">
+                    <h4 style="margin-bottom: 10px; color: var(--error);">🚫 功能瀑布反模式</h4>
+                    <p style="font-size: 0.9rem; color: var(--text-secondary);">所有功能一次展示在界面上，用户感到不知所措。避免方式：渐进式披露，从核心功能开始。</p>
+                </div>
+
+                <div style="padding: 20px; background: rgba(239, 68, 68, 0.1); border-radius: 10px; border-left: 4px solid var(--error);">
+                    <h4 style="margin-bottom: 10px; color: var(--error);">🚫 专业术语轰炸反模式</h4>
+                    <p style="font-size: 0.9rem; color: var(--text-secondary);">错误信息或界面使用技术术语，非技术用户困惑。避免方式：用简单语言，提供解释或工具提示。</p>
+                </div>
+
+                <div style="padding: 20px; background: rgba(239, 68, 68, 0.1); border-radius: 10px; border-left: 4px solid var(--error);">
+                    <h4 style="margin-bottom: 10px; color: var(--error);">🚫 没有引导的新手陷阱</h4>
+                    <p style="font-size: 0.9rem; color: var(--text-secondary);">首次打开应用时没有明确指导，用户不知道从哪里开始。避免方式：清晰的首屏向导、示例网址。</p>
+                </div>
+
+                <div style="padding: 20px; background: rgba(239, 68, 68, 0.1); border-radius: 10px; border-left: 4px solid var(--error);">
+                    <h4 style="margin-bottom: 10px; color: var(--error);">🚫 黑盒 AI 反模式</h4>
+                    <p style="font-size: 0.9rem; color: var(--text-secondary);">AI 过程完全不透明，用户不知道正在发生什么。避免方式：显示 AI 分析过程、置信度、允许预览和修正。</p>
+                </div>
+
+                <div style="padding: 20px; background: rgba(239, 68, 68, 0.1); border-radius: 10px; border-left: 4px solid var(--error);">
+                    <h4 style="margin-bottom: 10px; color: var(--error);">🚫 缺乏反馈反模式</h4>
+                    <p style="font-size: 0.9rem; color: var(--text-secondary);">操作后没有视觉或状态反馈，用户不确定是否成功。避免方式：每个操作都有明确的视觉反馈。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 设计方向决策 -->
+        <div class="section" id="design-decisions">
+            <h2 class="section-title">🎯 设计方向决策</h2>
+
+            <h3 style="margin: 25px 0 15px; color: var(--primary);">设计方向探索</h3>
+            <p style="margin-bottom: 20px; color: var(--text-secondary);">在深入探索过程中，我们分析了 8 种不同的设计方向变体：</p>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px;">
+                <div style="padding: 15px; background: var(--bg-secondary); border-radius: 8px; text-align: center;">
+                    <div style="font-size: 2rem; margin-bottom: 10px;">🎯</div>
+                    <div style="font-weight: 600; margin-bottom: 5px;">简洁聚焦式</div>
+                    <div style="font-size: 0.85rem; color: var(--text-secondary);">极致简洁，聚焦核心操作</div>
+                </div>
+
+                <div style="padding: 15px; background: var(--bg-secondary); border-radius: 8px; text-align: center;">
+                    <div style="font-size: 2rem; margin-bottom: 10px;">📋</div>
+                    <div style="font-weight: 600; margin-bottom: 5px;">左侧导航式</div>
+                    <div style="font-size: 0.85rem; color: var(--text-secondary);">经典应用布局，清晰导航结构</div>
+                </div>
+
+                <div style="padding: 15px; background: var(--bg-secondary); border-radius: 8px; text-align: center;">
+                    <div style="font-size: 2rem; margin-bottom: 10px;">📊</div>
+                    <div style="font-weight: 600; margin-bottom: 5px;">卡片仪表板式</div>
+                    <div style="font-size: 0.85rem; color: var(--text-secondary);">信息一目了然，数据可视化优先</div>
+                </div>
+
+                <div style="padding: 15px; background: var(--bg-secondary); border-radius: 8px; text-align: center;">
+                    <div style="font-size: 2rem; margin-bottom: 10px;">⚡</div>
+                    <div style="font-weight: 600; margin-bottom: 5px;">分屏工作区式</div>
+                    <div style="font-size: 0.85rem; color: var(--text-secondary);">左侧配置，右侧预览，实时反馈</div>
+                </div>
+
+                <div style="padding: 15px; background: var(--bg-secondary); border-radius: 8px; text-align: center;">
+                    <div style="font-size: 2rem; margin-bottom: 10px;">🧭</div>
+                    <div style="font-weight: 600; margin-bottom: 5px;">步骤向导式</div>
+                    <div style="font-size: 0.85rem; color: var(--text-secondary);">引导式流程，适合新手用户</div>
+                </div>
+
+                <div style="padding: 15px; background: var(--bg-secondary); border-radius: 8px; text-align: center;">
+                    <div style="font-size: 2rem; margin-bottom: 10px;">🔧</div>
+                    <div style="font-weight: 600; margin-bottom: 5px;">紧凑专业式</div>
+                    <div style="font-size: 0.85rem; color: var(--text-secondary);">高密度信息展示，适合专业用户</div>
+                </div>
+
+                <div style="padding: 15px; background: var(--bg-secondary); border-radius: 8px; text-align: center;">
+                    <div style="font-size: 2rem; margin-bottom: 10px;">🌙</div>
+                    <div style="font-weight: 600; margin-bottom: 5px;">深色沉浸式</div>
+                    <div style="font-size: 0.85rem; color: var(--text-secondary);">科技感强烈，视觉效果突出</div>
+                </div>
+
+                <div style="padding: 15px; background: var(--bg-secondary); border-radius: 8px; text-align: center;">
+                    <div style="font-size: 2rem; margin-bottom: 10px;">🧩</div>
+                    <div style="font-weight: 600; margin-bottom: 5px;">模块化可配置式</div>
+                    <div style="font-size: 0.85rem; color: var(--text-secondary);">功能模块可开关，灵活配置</div>
+                </div>
+            </div>
+
+            <h3 style="margin: 25px 0 15px; color: var(--success);">✅ 选定的设计方向</h3>
+            <p style="margin-bottom: 20px; color: var(--text-secondary);"><strong>三级界面策略：</strong>简洁聚焦式（基础）+ 卡片仪表板式（中间）+ 紧凑专业式（高级）+ 视图切换</p>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px;">
+                <div style="padding: 25px; background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%); border-radius: 12px; border: 2px solid var(--primary);">
+                    <h4 style="margin-bottom: 15px; color: var(--primary);">🎯 简洁视图（默认）</h4>
+                    <ul style="padding-left: 20px; color: var(--text-secondary); line-height: 1.8;">
+                        <li><strong>设计基础：</strong>简洁聚焦式</li>
+                        <li><strong>界面特征：</strong>大搜索框居中，示例网址，收起式左侧栏</li>
+                        <li><strong>目标用户：</strong>首次用户、非技术用户</li>
+                        <li><strong>关键体验：</strong>零代码体验，"像搜索引擎一样简单"</li>
+                    </ul>
+                </div>
+
+                <div style="padding: 25px; background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%); border-radius: 12px; border: 2px solid var(--success);">
+                    <h4 style="margin-bottom: 15px; color: var(--success);">📊 仪表板视图（切换）</h4>
+                    <ul style="padding-left: 20px; color: var(--text-secondary); line-height: 1.8;">
+                        <li><strong>设计基础：</strong>卡片仪表板式</li>
+                        <li><strong>界面特征：</strong>卡片布局，统计卡片，最近任务列表</li>
+                        <li><strong>目标用户：</strong>数据工程师、有经验用户</li>
+                        <li><strong>关键体验：</strong>数据透明，任务监控，快速访问</li>
+                    </ul>
+                </div>
+
+                <div style="padding: 25px; background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(245, 158, 11, 0.05) 100%); border-radius: 12px; border: 2px solid var(--warning);">
+                    <h4 style="margin-bottom: 15px; color: var(--warning);">🔧 专业视图（开发者模式）</h4>
+                    <ul style="padding-left: 20px; color: var(--text-secondary); line-height: 1.8;">
+                        <li><strong>设计基础：</strong>紧凑专业式</li>
+                        <li><strong>界面特征：</strong>高密度信息展示，工具栏，详细配置面板</li>
+                        <li><strong>目标用户：</strong>开发者、高级用户</li>
+                        <li><strong>关键体验：</strong>效率优先，批量操作，详细配置</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3 style="margin: 25px 0 15px; color: var(--primary);">为什么选择三级界面策略？</h3>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px;">
+                <div style="padding: 20px; background: var(--bg-secondary); border-radius: 10px; border-left: 4px solid var(--primary);">
+                    <h4 style="margin-bottom: 10px; color: var(--primary);">1. 满足所有用户类型</h4>
+                    <p style="font-size: 0.9rem; color: var(--text-secondary);">非技术用户：简洁视图，零代码体验。数据工程师：仪表板视图，监控和预览。开发者：专业视图，精确控制和批量操作。</p>
+                </div>
+
+                <div style="padding: 20px; background: var(--bg-secondary); border-radius: 10px; border-left: 4px solid var(--primary);">
+                    <h4 style="margin-bottom: 10px; color: var(--primary);">2. 平衡简洁性和功能性</h4>
+                    <p style="font-size: 0.9rem; color: var(--text-secondary);">默认简洁，降低首次使用摩擦。高级功能可通过切换访问。用户可以根据需求选择最合适的视图。</p>
+                </div>
+
+                <div style="padding: 20px; background: var(--bg-secondary); border-radius: 10px; border-left: 4px solid var(--primary);">
+                    <h4 style="margin-bottom: 10px; color: var(--primary);">3. 支持渐进式能力</h4>
+                    <p style="font-size: 0.9rem; color: var(--text-secondary);">用户从简单视图开始。随着使用经验增长，可以切换到更高级的视图。界面随用户技术水平自适应。</p>
+                </div>
+
+                <div style="padding: 20px; background: var(--bg-secondary); border-radius: 10px; border-left: 4px solid var(--primary);">
+                    <h4 style="margin-bottom: 10px; color: var(--primary);">4. 解决核心设计挑战</h4>
+                    <p style="font-size: 0.9rem; color: var(--text-secondary);">渐进式复杂度：三个视图满足不同技术水平。AI 不确定性可视化：所有视图都有透明度特性。</p>
+                </div>
+
+                <div style="padding: 20px; background: var(--bg-secondary); border-radius: 10px; border-left: 4px solid var(--primary);">
+                    <h4 style="margin-bottom: 10px; color: var(--primary);">5. 对齐核心体验原则</h4>
+                    <p style="font-size: 0.9rem; color: var(--text-secondary);">零代码优先：简洁视图最大化零代码体验。AI 透明可见：所有视图共享透明度特性。首次体验成功：首次使用向导 + 简洁视图。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 用户旅程流程 -->
+        <div class="section" id="user-journeys">
+            <h2 class="section-title">🛤️ 用户旅程流程</h2>
+
+            <h3 style="margin: 25px 0 15px; color: var(--primary);">旅程 1: 首次使用旅程（新手用户）</h3>
+            <p style="margin-bottom: 20px; color: var(--text-secondary);"><strong>旅程描述：</strong>首次启动应用，完成初始配置，成功爬取第一个网站</p>
+
+            <div style="background: var(--bg-secondary); padding: 25px; border-radius: 12px; margin-bottom: 25px;">
+                <h4 style="margin-bottom: 15px; color: var(--text-primary);">📋 流程设计问题</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+                    <div style="padding: 15px; background: var(--bg-primary); border-radius: 8px;">
+                        <div style="font-weight: 600; margin-bottom: 5px; color: var(--primary);">如何开始？</div>
+                        <div style="font-size: 0.9rem; color: var(--text-secondary);">双击应用图标</div>
+                    </div>
+                    <div style="padding: 15px; background: var(--bg-primary); border-radius: 8px;">
+                        <div style="font-weight: 600; margin-bottom: 5px; color: var(--primary);">需要什么信息？</div>
+                        <div style="font-size: 0.9rem; color: var(--text-secondary);">欢迎页、AI 模型配置、首次爬取</div>
+                    </div>
+                    <div style="padding: 15px; background: var(--bg-primary); border-radius: 8px;">
+                        <div style="font-weight: 600; margin-bottom: 5px; color: var(--primary);">需要什么决策？</div>
+                        <div style="font-size: 0.9rem; color: var(--text-secondary);">选择 AI 模型、输入网址</div>
+                    </div>
+                    <div style="padding: 15px; background: var(--bg-primary); border-radius: 8px;">
+                        <div style="font-weight: 600; margin-bottom: 5px; color: var(--primary);">如何知道进展？</div>
+                        <div style="font-size: 0.9rem; color: var(--text-secondary);">步骤指示器、进度条</div>
+                    </div>
+                    <div style="padding: 15px; background: var(--bg-primary); border-radius: 8px;">
+                        <div style="font-weight: 600; margin-bottom: 5px; color: var(--primary);">成功看起来像？</div>
+                        <div style="font-size: 0.9rem; color: var(--text-secondary);">庆祝动画、数据统计</div>
+                    </div>
+                    <div style="padding: 15px; background: var(--bg-primary); border-radius: 8px;">
+                        <div style="font-weight: 600; margin-bottom: 5px; color: var(--primary);">哪里可能卡住？</div>
+                        <div style="font-size: 0.9rem; color: var(--text-secondary);">AI 模型选择、网址格式</div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%); padding: 25px; border-radius: 12px; border: 2px solid var(--success);">
+                <h4 style="margin-bottom: 15px; color: var(--success);">✨ 优化方案</h4>
+                <ul style="padding-left: 20px; color: var(--text-secondary); line-height: 1.8;">
+                    <li><strong>最小化到价值的步数：</strong>示例网址让用户无需输入就能看到效果</li>
+                    <li><strong>智能默认配置：</strong>检测本地 Ollama，自动推荐本地模型优先</li>
+                    <li><strong>清晰进度指示：</strong>每个步骤都有明确的进度指示器（步骤 X/5）</li>
+                    <li><strong>快速错误恢复：</strong>AI 模型连接失败时，提供具体的解决步骤</li>
+                    <li><strong>庆祝时刻增强：</strong>首次成功爬取后显示庆祝动画和数据统计</li>
+                </ul>
+            </div>
+
+            <h3 style="margin: 25px 0 15px; color: var(--primary);">旅程 2: 常规爬取旅程（已配置用户）</h3>
+            <p style="margin-bottom: 20px; color: var(--text-secondary);"><strong>旅程描述：</strong>已配置用户输入网址，AI 分析并爬取数据</p>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                <div style="padding: 20px; background: var(--bg-secondary); border-radius: 10px;">
+                    <h4 style="margin-bottom: 10px; color: var(--primary);">🎯 核心流程</h4>
+                    <div style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.8;">
+                        输入网址 → AI 分析 → 预览字段 → 确认提取 → 查看结果 → 导出数据
+                    </div>
+                </div>
+
+                <div style="padding: 20px; background: var(--bg-secondary); border-radius: 10px;">
+                    <h4 style="margin-bottom: 10px; color: var(--primary);">⚡ 关键体验</h4>
+                    <div style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.8;">
+                        实时进度显示、字段置信度指示、一键导出、准确率统计
+                    </div>
+                </div>
+
+                <div style="padding: 20px; background: var(--bg-secondary); border-radius: 10px;">
+                    <h4 style="margin-bottom: 10px; color: var(--primary);">🛡️ 错误处理</h4>
+                    <div style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.8;">
+                        友好错误提示、重试选项、详细错误日志、解决建议
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- UX 一致性模式 -->
+        <div class="section" id="ux-consistency">
+            <h2 class="section-title">🔄 UX 一致性模式</h2>
+            <p style="margin-bottom: 20px; color: var(--text-secondary);">确保整个应用的一致性体验，建立用户信任和熟悉感。</p>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px;">
+                <div style="padding: 20px; background: var(--bg-secondary); border-radius: 10px; border-left: 4px solid var(--primary);">
+                    <h4 style="margin-bottom: 10px; color: var(--primary);">🎨 视觉一致性</h4>
+                    <p style="font-size: 0.9rem; color: var(--text-secondary);">统一的颜色系统、字体层级、间距规范。所有界面使用相同的设计令牌。</p>
+                </div>
+
+                <div style="padding: 20px; background: var(--bg-secondary); border-radius: 10px; border-left: 4px solid var(--primary);">
+                    <h4 style="margin-bottom: 10px; color: var(--primary);">🖱️ 交互一致性</h4>
+                    <p style="font-size: 0.9rem; color: var(--text-secondary);">相同的操作有相同的反馈模式。按钮、表单、导航使用统一的交互模式。</p>
+                </div>
+
+                <div style="padding: 20px; background: var(--bg-secondary); border-radius: 10px; border-left: 4px solid var(--primary);">
+                    <h4 style="margin-bottom: 10px; color: var(--primary);">📝 语言一致性</h4>
+                    <p style="font-size: 0.9rem; color: var(--text-secondary);">统一的术语和文案风格。错误信息、成功提示、操作说明使用一致的语言。</p>
+                </div>
+
+                <div style="padding: 20px; background: var(--bg-secondary); border-radius: 10px; border-left: 4px solid var(--primary);">
+                    <h4 style="margin-bottom: 10px; color: var(--primary);">⌨️ 快捷键一致性</h4>
+                    <p style="font-size: 0.9rem; color: var(--text-secondary);">常用操作使用标准快捷键。Ctrl/Cmd + S 保存、Ctrl/Cmd + Z 撤销等。</p>
+                </div>
+
+                <div style="padding: 20px; background: var(--bg-secondary); border-radius: 10px; border-left: 4px solid var(--primary);">
+                    <h4 style="margin-bottom: 10px; color: var(--primary);">🔔 反馈一致性</h4>
+                    <p style="font-size: 0.9rem; color: var(--text-secondary);">成功、错误、警告使用统一的视觉反馈。通知、提示、错误消息样式一致。</p>
+                </div>
+
+                <div style="padding: 20px; background: var(--bg-secondary); border-radius: 10px; border-left: 4px solid var(--primary);">
+                    <h4 style="margin-bottom: 10px; color: var(--primary);">📱 响应式一致性</h4>
+                    <p style="font-size: 0.9rem; color: var(--text-secondary);">不同屏幕尺寸下保持一致的体验。移动端、平板、桌面端功能对等。</p>
+                </div>
+            </div>
+        </div>
+
         <!-- 结论 -->
         <div class="section" id="conclusion" style="background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white;">
             <h2 style="margin-bottom: 20px; color: white;">🎯 结论</h2>
@@ -2352,10 +2830,10 @@
                     🤖 AI 爬虫框架 - 设计方向展示
                 </p>
                 <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 8px;">
-                    文档版本：1.1 | 最后更新：2026-05-01
+                    文档版本：2.0 | 最后更新：2026-05-02
                 </p>
                 <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 15px; opacity: 0.8;">
-                    新增：离线模式支持、撤销/重做机制、目录导航、性能优化
+                    新增：UX 模式分析、设计方向决策、用户旅程流程、UX 一致性模式、启发产品分析
                 </p>
                 <div style="display: flex; justify-content: center; gap: 20px; margin-top: 20px; flex-wrap: wrap;">
                     <a href="#" style="color: var(--primary); text-decoration: none; font-size: 0.9rem;">
@@ -2477,6 +2955,44 @@
                 }, 300);
             }
         }
+
+        // 更新目录导航的激活状态
+        function updateActiveTocLink() {
+            const sections = document.querySelectorAll('.section[id]');
+            const tocLinks = document.querySelectorAll('.toc-link');
+
+            let currentSection = '';
+
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                if (window.scrollY >= sectionTop - 100) {
+                    currentSection = section.getAttribute('id');
+                }
+            });
+
+            tocLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === `#${currentSection}`) {
+                    link.classList.add('active');
+                }
+            });
+        }
+
+        // 为目录链接添加平滑滚动
+        document.querySelectorAll('.toc-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href').substring(1);
+                const targetSection = document.getElementById(targetId);
+                if (targetSection) {
+                    const offsetTop = targetSection.offsetTop - 20;
+                    window.scrollTo({
+                        top: offsetTop,
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
 
         // 页面加载时初始化
         document.addEventListener('DOMContentLoaded', function() {
