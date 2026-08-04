@@ -1,0 +1,26 @@
+import { defineConfig } from 'vitest/config';
+import vue from '@vitejs/plugin-vue';
+import { resolve } from 'node:path';
+
+export default defineConfig({
+  plugins: [vue()],
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, 'src'),
+      '@electron': resolve(__dirname, 'electron')
+    }
+  },
+  test: {
+    environment: 'jsdom',
+    include: [
+      'tests/unit/**/*.test.ts',
+      'tests/components/**/*.test.ts'
+    ],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'lcov', 'html'],
+      include: ['electron/services/**/*.ts', 'src/composables/**/*.ts', 'src/api/**/*.ts', 'src/stores/**/*.ts'],
+      exclude: ['tests/**', 'dist-electron/**', 'dist-renderer/**', '**/*.test.ts', '**/*.spec.ts']
+    }
+  }
+});

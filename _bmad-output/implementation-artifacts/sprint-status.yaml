@@ -1,0 +1,211 @@
+# Sprint Status
+# Generated: 2026-07-30
+# Updated: 2026-07-30
+# Project: vscode_bmad_method_test
+# Project Key: NOKEY
+# Tracking System: file-system
+# Story Location: _bmad-output/implementation-artifacts
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on (stories being created/implemented)
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - Developer typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+
+generated: 2026-07-30 13:21
+last_updated: 2026-08-05 06:55
+project: vscode_bmad_method_test
+project_key: NOKEY
+tracking_system: file-system
+story_location: "_bmad-output/implementation-artifacts"
+
+development_status:
+  # Epic 1: 首次使用引导与快速上手 (4 Stories)
+  epic-1: in-progress
+  1-1-desktop-app-install-launch: done
+  1-2-simple-view-url-input: backlog
+  1-3-task-management-history: backlog
+  1-4-interface-settings-notifications: backlog
+  epic-1-retrospective: optional
+
+  # Epic 2: AI驱动的页面分析与数据提取 (6 Stories)
+  epic-2: backlog
+  2-1-url-input-page-structure-analysis: backlog
+  2-2-data-field-specification-extraction: backlog
+  2-3-ai-result-preview-manual-adjustment: backlog
+  2-4-ai-provider-basic-config: backlog
+  2-5-website-structure-adaptive-learning: backlog
+  2-6-dynamic-website-javascript-support: backlog
+  epic-2-retrospective: optional
+
+  # Epic 3: 爬取任务管理与调度 (8 Stories)
+  epic-3: backlog
+  3-1-single-url-task-creation: backlog
+  3-2-batch-url-task-creation: backlog
+  3-3-task-scheduling-frequency: backlog
+  3-4-task-execution-control: backlog
+  3-5-task-execution-logs: backlog
+  3-6-task-organization-management: backlog
+  3-7-offline-task-queue-management: backlog
+  3-8-task-deletion-undo: backlog
+  epic-3-retrospective: optional
+
+  # Epic 4: 三级视图与用户界面 (11 Stories)
+  epic-4: backlog
+  4-1-simple-view-design: backlog
+  4-2-dashboard-view-design: backlog
+  4-3-professional-view-design: backlog
+  4-4-view-switcher-component: backlog
+  4-5-batch-url-input-interface: backlog
+  4-6-cli-integration: backlog
+  4-7-button-hierarchy-system: backlog
+  4-8-feedback-pattern-system: backlog
+  4-9-form-patterns-validation: backlog
+  4-10-navigation-pattern-system: backlog
+  4-11-config-undo: backlog
+  epic-4-retrospective: optional
+
+  # Epic 5: 数据管理与导出 (8 Stories)
+  epic-5: backlog
+  5-1-data-export: backlog
+  5-2-postgresql-storage: backlog
+  5-3-custom-storage-path: backlog
+  5-4-data-file-management: backlog
+  5-5-data-merge-filter: backlog
+  5-6-data-archive-delete: backlog
+  5-7-excel-export-advanced: backlog
+  5-8-offline-data-access: backlog
+  epic-5-retrospective: optional
+
+  # Epic 6: 离线模式与数据持久化 (6 Stories)
+  epic-6: backlog
+  6-1-network-status-detection: backlog
+  6-2-offline-data-access: backlog
+  6-3-offline-task-queue-management: backlog
+  6-4-offline-mode-status-indicator: backlog
+  6-5-offline-data-browser-component: backlog
+  6-6-network-status-monitor-component: backlog
+  epic-6-retrospective: optional
+
+  # Epic 7: 撤销/重做与操作恢复 (5 Stories)
+  epic-7: backlog
+  7-1-config-undo: backlog
+  7-2-config-redo: backlog
+  7-3-undo-redo-shortcuts: backlog
+  7-4-task-deletion-recovery: backlog
+  7-5-undo-history-interface: backlog
+  epic-7-retrospective: optional
+
+  # Epic 8: AI模型集成与多提供商支持 (6 Stories)
+  epic-8: backlog
+  8-1-local-ai-model-config: backlog
+  8-2-cloud-ai-model-config: backlog
+  8-3-model-priority-parameters: backlog
+  8-4-automatic-model-selection: backlog
+  8-5-cost-monitoring-budget: backlog
+  8-6-model-performance-monitoring: backlog
+  epic-8-retrospective: optional
+
+  # Epic 9: 反爬虫机制与智能防护 (6 Stories)
+  epic-9: backlog
+  9-1-request-frequency-control: backlog
+  9-2-user-agent-rotation: backlog
+  9-3-ip-rotation-proxy-pool: backlog
+  9-4-captcha-auto-handling: backlog
+  9-5-human-behavior-simulation: backlog
+  9-6-rules-compliance-detection: backlog
+  epic-9-retrospective: optional
+
+  # Epic 10: 安全合规与隐私保护 (8 Stories)
+  epic-10: backlog
+  10-1-local-data-storage: backlog
+  10-2-encryption-transport-security: backlog
+  10-3-access-control-permissions: backlog
+  10-4-operation-log-audit-trail: backlog
+  10-5-privacy-settings: backlog
+  10-6-privacy-policy-document: backlog
+  10-7-regulatory-compliance: backlog
+  10-8-data-export-deletion: backlog
+  epic-10-retrospective: optional
+
+  # Epic 11: 桌面部署与系统集成 (5 Stories)
+  epic-11: backlog
+  11-1-multi-platform-installers: backlog
+  11-2-containerized-deployment: backlog
+  11-3-kubernetes-cicd: backlog
+  11-4-auto-update-version-management: backlog
+  11-5-third-party-integration-dev-tools: backlog
+  epic-11-retrospective: optional
+
+  # Epic 12: 监控与性能优化 (5 Stories)
+  epic-12: backlog
+  12-1-realtime-monitoring-dashboard: backlog
+  12-2-task-failure-alerts: backlog
+  12-3-system-resource-monitoring: backlog
+  12-4-performance-metrics-monitoring: backlog
+  12-5-alert-config-historical-data: backlog
+  epic-12-retrospective: optional
+
+  # Epic 13: 社区协作与模板共享 (5 Stories)
+  epic-13: backlog
+  13-1-community-platform-template-browsing: backlog
+  13-2-template-sharing-rating: backlog
+  13-3-documents-tutorials: backlog
+  13-4-user-interaction-follow: backlog
+  13-5-collaborative-project-management: backlog
+  epic-13-retrospective: optional
+
+  # Epic 14: 基础设施-可观测性与日志审计 (4 Stories)
+  epic-14: backlog
+  14-1-performance-monitoring-optimization: backlog
+  14-2-encryption-transport-security: backlog
+  14-3-access-control-security-audit: backlog
+  14-4-availability-scalability: backlog
+  epic-14-retrospective: optional
+
+  # Epic 15: 基础设施-水平扩展与集成能力 (3 Stories)
+  epic-15: backlog
+  15-1-horizontal-scaling-distributed-crawling: backlog
+  15-2-database-optimization-caching-strategy: backlog
+  15-3-third-party-integration: backlog
+  epic-15-retrospective: optional
+
+# NOTES:
+# =====
+# - Total Epics: 15
+# - Total Stories: 90
+# - Implementation Readiness: READY FOR IMPLEMENTATION (per readiness report 2026-05-01)
+# - All stories start at backlog; no story files created yet
+# - Epic 1 was corrected per Sprint Change Proposal 2026-04-30 (was community-platform, now first-time-onboarding)
+# - Old _bmad/sprint-status.yaml is stale (80 stories, pre-correction structure); this file is canonical
+
+# NEXT STEPS:
+# ===========
+# 1. Use bmad-create-story to prepare first story (recommend Epic 2 Story 2.1 or Epic 13 Story 13.1)
+# 2. Epic status auto-transitions to in-progress when first story is created
+# 3. After story validation (VS), run dev-story (DS) to implement
+# 4. Run code-review (CR) to verify
+# 5. Iterate story cycle until epic complete, then optional retrospective (ER)
