@@ -1,5 +1,24 @@
 # Deferred Work
 
+## Deferred from: code review of 1-2-simple-view-url-input (2026-08-07 — second pass)
+
+- WS 订阅先于 crawl() 任务创建 — `runCrawl` 顺序 `await getCrawlProgress('mock-task')` 后再 `await crawl(...)`，真实后端中 WS 连接到尚未创建的 task_id [frontend/src/views/SimpleView.vue:97-118] — deferred: 真实 WS 流程由 Epic 2 重排为 `crawl → 取 task_id → getCrawlProgress(task_id)`
+- 硬编码 `'mock-task'` taskId 泄漏到真实后端分支 — `getCrawlProgress('mock-task', ...)` 字面 taskId 与 `crawl()` 返回 `{ rows: N }` 不携带 task_id 不匹配 [frontend/src/views/SimpleView.vue:103, frontend/src/api/analyze.ts:103] — deferred: 真实 task_id 由 Epic 2 通过 `crawl()` 响应或独立 endpoint 取得
+- ViewSwitcher 单次 click 三重 store 写 — 子组件 onSelect 既 emit 又 `uiStore.setViewPreference('simple')`，父 SimpleView onViewChange 再次 `setViewPreference(view)` [frontend/src/components/ViewSwitcher.vue:44-51 + frontend/src/views/SimpleView.vue:179-181] — deferred: pinia ref 同值多次赋值仅触发一次 watcher——localStorage 仍单写，属设计气味非 bug；Epic 4 视图完整接入后或可整组重构
+- onSelect 仪表板/专业 branch 静默 no-op — `if (view === 'simple')` 是唯一处理分支；当前 disabled button 保证不可达 [frontend/src/components/ViewSwitcher.vue:44-51] — deferred: Epic 4 实现仪表板/专业视图组件时补 handler + 路由切换
+- WebSocket 收到非法 payload 后未 ws.close() — JSON.parse 抛错时 reject 但未关闭 socket [frontend/src/api/analyze.ts:119-121] — deferred: WS 路径 Epic 2 实现真实客户端时统一处理
+- WebSocket onclose 早于 onerror 静默 resolve（重申）— onerror=reject 与 onclose=resolve；某些环境下 onclose 先触发会让真实网络错误被 resolve 吞掉 [frontend/src/api/analyze.ts:121-124] — deferred, pre-existing — 与首次评审 deferred-work.md 重复，Epic 2 修复
+- 测试环境强制 MOCK_BACKEND（MODE==='test' + vitest define 'true' 双重冗余）— 阻止 vitest 下写真实后端集成测试 [frontend/src/api/analyze.ts:11-13 + frontend/vitest.config.ts:7-9] — deferred: Epic 2 引入真实后端集成测试时再决定 test runner 分层
+- onStartHistory 双 scrollTo 冗余 — bodyRef.scrollTo + window.scrollTo；CSS 无 overflow，bodyRef 调用必为 no-op [frontend/src/views/SimpleView.vue:170-177] — deferred: cosmetic 死代码可清理
+- getCrawlProgress abort 时 resolve 而非 reject — 非对称契约，调用方无法区分 abort 与正常完成 [frontend/src/api/analyze.ts:74,99] — deferred: 改 reject 需调用方同步加 AbortError 过滤，契约变更属 Epic 2 WS 整体重构范畴
+- SmartURLInput 与 SimpleView 两层验证边界不一致 — 子组件仅拦 invalid，empty 仍 emit；父再校 empty。两层边界微妙不同 [frontend/src/components/SmartURLInput.vue:142-148 + frontend/src/views/SimpleView.vue:144-155] — deferred: 设计选择，Epic 4 表单模式标准化时复核
+- WS 路径无前置 aborted signal 检查 — mock 路径 L74 有早退保护，WS 分支 L102-127 入口无同保护 [frontend/src/api/analyze.ts:102-127] — deferred: WS 路径全部由 Epic 2 接管
+
+## Deferred from: code review of 1-2-simple-view-url-input (2026-08-06)
+
+- mock analyze/crawl 忽略 AbortSignal — 组件卸载后 mock setTimeout 仍回调 ref，Vue 警告 "state update on unmounted component"。真实后端 + signal 处理由 Epic 2 实现 [frontend/src/api/analyze.ts:17,29] — deferred: 当前 mock 模式下不可由 signal 取消，需 Epic 2 真实后端集成层修
+- WebSocket onclose 早于 onerror 静默 resolve — MOCK_BACKEND=true 时不可达，mock setInterval 解析无 ws 路径。真实 WebSocket 错误处理由 Epic 2 修 [frontend/src/api/analyze.ts:122-124] — deferred: 当前未连接真实 ws，Epic 2 实现真实 WebSocket 客户端时复核
+
 ## Deferred from: code review of 1-1-desktop-app-install-launch (2026-08-03)
 
 - dependencyCheckPromise 字段冗余 — 仅一次 await 使用可省，可内联到 whenReady 调用 [frontend/electron/main.ts:20, 198-201]

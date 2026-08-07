@@ -10,3 +10,11 @@ export const mockAnalyzeResponse: AnalyzeResponse = {
     { name: 'description', selector: 'div.description', confidence: 0.85, sample: '示例商品描述…' }
   ]
 };
+
+export const mockExamples: string[] = [
+  'https://example.com/product',
+  'https://news.example.com/article',
+  'https://blog.example.com/post'
+];
+
+export const mockAnalyzedFields: string[] = mockAnalyzeResponse.fields.map((f) => f.name);

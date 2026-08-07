@@ -1,12 +1,18 @@
-import type { AnalyzeResponse } from '@/types/analyze';
+import type { AnalyzeResponse, CrawlStage } from '@/types/analyze';
 import { mockAnalyzeResponse } from '@/mocks/analyze-mock';
+
+const MOCK_FINAL_EXTRACTED_COUNT = 156;
 
 export interface AnalyzeOptions {
   signal?: AbortSignal;
 }
 
+export type ProgressHandler = (progress: number, stage: CrawlStage, extractedCount: number) => void;
+
 const MOCK_BACKEND =
-  import.meta.env.DEV || import.meta.env.VITE_MOCK_BACKEND === 'true';
+  import.meta.env.DEV ||
+  import.meta.env.MODE === 'test' ||
+  import.meta.env.VITE_MOCK_BACKEND === 'true';
 
 export async function analyze(url: string, options: AnalyzeOptions = {}): Promise<AnalyzeResponse> {
   if (MOCK_BACKEND) {
@@ -60,4 +66,69 @@ export async function testAiProvider(endpoint: string, options: AnalyzeOptions =
     clearTimeout(timeoutId);
     return false;
   }
+}
+
+export async function getCrawlProgress(
+  taskId: string,
+  onProgress: ProgressHandler,
+  options: AnalyzeOptions = {}
+): Promise<void> {
+  if (options.signal?.aborted) return Promise.resolve();
+  if (MOCK_BACKEND) {
+    return new Promise<void>((resolve) => {
+      let progress = 0;
+      let stage: CrawlStage = 'analyzing';
+      let count = 0;
+      const id = setInterval(() => {
+        if (options.signal?.aborted) {
+          clearInterval(id);
+          resolve();
+          return;
+        }
+        progress = Math.min(progress + 5, 100);
+        if (progress < 60) {
+          stage = 'analyzing';
+        } else if (progress < 100) {
+          stage = 'extracting';
+          count = Math.round(((progress - 60) / 40) * MOCK_FINAL_EXTRACTED_COUNT);
+        } else {
+          stage = 'completed';
+          count = 156;
+        }
+        onProgress(progress, stage, count);
+        if (progress >= 100) {
+          clearInterval(id);
+          resolve();
+        }
+      }, 200);
+      options.signal?.addEventListener('abort', () => {
+        clearInterval(id);
+        resolve();
+      });
+    });
+  }
+  const ws = new WebSocket(`ws://localhost:8000/ws/progress/${taskId}`);
+  await new Promise<void>((resolve, reject) => {
+    ws.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(event.data);
+        if (payload?.event === 'crawl_progress') {
+          onProgress(
+            payload.data.progress,
+            payload.data.stage,
+            payload.data.extracted_count
+          );
+        } else if (payload?.event === 'task_completed') {
+          onProgress(100, 'completed', payload.data.extracted_count);
+          ws.close();
+          resolve();
+        }
+      } catch {
+        reject(new Error('invalid ws payload'));
+      }
+    };
+    ws.onerror = () => reject(new Error('ws error'));
+    ws.onclose = () => resolve();
+    options.signal?.addEventListener('abort', () => ws.close());
+  });
 }
