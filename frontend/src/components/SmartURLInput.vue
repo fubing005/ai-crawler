@@ -1,21 +1,46 @@
 <template>
   <div class="smart-url-input">
     <n-input-group class="smart-url-input__group">
-      <n-input
-        ref="inputRef"
-        v-model:value="url"
-        :placeholder="placeholder"
-        size="large"
-        :status="status"
-        :input-props="inputProps"
-        clearable
-        @keydown.enter.ctrl="onSubmit"
-        @keydown.enter.meta="onSubmit"
+      <n-popover
+        placement="bottom-start"
+        trigger="manual"
+        :show="showHistory && historyItems.length > 0"
+        :show-arrow="false"
       >
-        <template #prefix>
-          <n-icon :component="GlobeOutline" aria-hidden="true" />
+        <template #trigger>
+          <n-input
+            ref="inputRef"
+            v-model:value="url"
+            :placeholder="placeholder"
+            size="large"
+            :status="status"
+            :input-props="inputProps"
+            clearable
+            @keydown.enter.ctrl="onSubmit"
+            @keydown.enter.meta="onSubmit"
+            @focus="onFocus"
+            @blur="onBlur"
+          >
+            <template #prefix>
+              <n-icon :component="GlobeOutline" aria-hidden="true" />
+            </template>
+          </n-input>
         </template>
-      </n-input>
+        <ul class="smart-url-input__history" role="listbox" aria-label="历史网址">
+          <li
+            v-for="item in historyItems.slice(0, 5)"
+            :key="item.url"
+            role="option"
+            tabindex="0"
+            class="smart-url-input__history-item"
+            @click="onHistoryClick(item.url)"
+            @keydown.enter.prevent="onHistoryClick(item.url)"
+          >
+            <span class="smart-url-input__history-host">{{ hostOf(item.url) }}</span>
+            <span class="smart-url-input__history-time">{{ formatRelativeTime(item.completedAt) }}</span>
+          </li>
+        </ul>
+      </n-popover>
       <n-button
         type="primary"
         size="large"
@@ -55,12 +80,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed, nextTick } from 'vue';
-import { NInput, NButton, NInputGroup, NIcon, NTag } from 'naive-ui';
+import { ref, watch, computed, nextTick, onBeforeUnmount } from 'vue';
+import { NInput, NButton, NInputGroup, NIcon, NTag, NPopover } from 'naive-ui';
 import { GlobeOutline } from '@vicons/ionicons5';
+import { formatRelativeTime } from '@/composables/useRelativeTime';
 
 export type UrlStatus = 'empty' | 'valid' | 'invalid' | 'loading';
 export type SubmitPhase = 'idle' | 'analyzing' | 'extracting' | 'completed';
+
+export interface HistoryItem {
+  url: string;
+  completedAt: number;
+}
 
 interface Props {
   modelValue: string;
@@ -69,6 +100,7 @@ interface Props {
   phase?: SubmitPhase;
   placeholder?: string;
   ariaLabel?: string;
+  historyItems?: HistoryItem[];
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -76,7 +108,8 @@ const props = withDefaults(defineProps<Props>(), {
   loading: false,
   phase: 'idle',
   placeholder: '粘贴网址，例如 https://example.com/product',
-  ariaLabel: '网址'
+  ariaLabel: '网址',
+  historyItems: () => []
 });
 
 const emit = defineEmits<{
@@ -87,6 +120,8 @@ const emit = defineEmits<{
 const url = ref<string>(props.modelValue);
 const status = ref<UrlStatus>('empty');
 const inputRef = ref<InstanceType<typeof NInput> | null>(null);
+const showHistory = ref(false);
+let blurTimer: number | null = null;
 
 const buttonText = computed(() => {
   if (props.phase === 'analyzing') return '正在分析…';
@@ -156,6 +191,47 @@ function onExampleClick(example: string) {
   });
 }
 
+function onFocus() {
+  if (blurTimer) {
+    clearTimeout(blurTimer);
+    blurTimer = null;
+  }
+  showHistory.value = props.historyItems.length > 0;
+}
+
+function onBlur() {
+  if (blurTimer) clearTimeout(blurTimer);
+  blurTimer = window.setTimeout(() => {
+    showHistory.value = false;
+    blurTimer = null;
+  }, 150);
+}
+
+onBeforeUnmount(() => {
+  if (blurTimer) {
+    clearTimeout(blurTimer);
+    blurTimer = null;
+  }
+});
+
+function onHistoryClick(value: string) {
+  url.value = value;
+  emit('update:modelValue', value);
+  void nextTick(() => {
+    syncStatus(value);
+    showHistory.value = false;
+    focusInput();
+  });
+}
+
+function hostOf(value: string): string {
+  try {
+    return new URL(value).hostname;
+  } catch {
+    return value;
+  }
+}
+
 function focusInput() {
   const el = inputRef.value as unknown as { focus?: () => void } | null;
   if (el && typeof el.focus === 'function') el.focus();
@@ -181,6 +257,40 @@ function focusInput() {
   margin-top: 8px;
   font-size: 13px;
   color: #DC2626;
+}
+.smart-url-input__history {
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+  min-width: 240px;
+  max-width: 360px;
+}
+.smart-url-input__history-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #1F2937;
+  border-radius: 4px;
+}
+.smart-url-input__history-item:hover,
+.smart-url-input__history-item:focus-visible {
+  background: #F3F4F6;
+  outline: none;
+}
+.smart-url-input__history-host {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.smart-url-input__history-time {
+  flex: 0 0 auto;
+  font-size: 12px;
+  color: #6B7280;
 }
 .smart-url-input__chip:focus-visible,
 .smart-url-input :deep(.n-button):focus-visible,
