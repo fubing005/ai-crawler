@@ -1,14 +1,19 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { nextTick } from 'vue';
 import SimpleView from '@/views/SimpleView.vue';
 import { createTestingPinia } from '@pinia/testing';
 import { NNotificationProvider, NMessageProvider } from 'naive-ui';
 import * as analyzeApi from '@/api/analyze';
+import { useCrawlStore } from '@/stores/crawl';
 
 describe('SimpleView.vue', () => {
   beforeEach(() => {
     localStorage.clear();
+  });
+
+  afterEach(() => {
+    try { useCrawlStore().stopTick(); } catch { /* store not initialized */ }
   });
 
   it('renders placeholder empty state', () => {
@@ -286,6 +291,7 @@ describe('SimpleView.vue', () => {
     await vi.advanceTimersByTimeAsync(6500);
     const store = (await import('@/stores/crawl')).useCrawlStore();
     const initialCount = store.history.length;
+    const removedId = store.history[0]?.id;
     const deleteBtn = wrapper.findAll('button').find((b) => b.text().includes('删除'));
     await deleteBtn!.trigger('click');
     expect(store.history.length).toBe(initialCount - 1);
@@ -293,6 +299,7 @@ describe('SimpleView.vue', () => {
     expect(undoBtn.exists()).toBe(true);
     await undoBtn.trigger('click');
     expect(store.history.length).toBe(initialCount);
+    expect(store.history[0]?.id).toBe(removedId);
     vi.useRealTimers();
   });
 });

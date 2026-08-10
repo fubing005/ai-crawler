@@ -1,6 +1,6 @@
 # Story 1.3: 任务管理与历史记录
 
-Status: in-progress
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -23,7 +23,7 @@ Status: in-progress
 9. **AC9 - 简洁视图文案符合王芳 persona**：所有可见文案延续 1-2 王芳 persona 规范——历史卡片任务标题用页面标题或 hostname（非"task_id: abc123"）、时间为"3 分钟前"（非 ISO 8601）、状态徽标为"已完成"（非"completed"）、删除按钮为"删除"（非"Delete Task"）、空详情为"还没有详情"（非"No data"）、撤销通知为"已删除，5 秒内可撤销"（非"Task deleted"）。 [Source: prd.md#L1406-L1424 王芳 persona, 1-2-simple-view-url-input.md#L336-L358 王芳文案指导, 1-1-desktop-app-install-launch.md#L359-L377 王芳文案落地]
 10. **AC10 - 与 Story 1.2 测试无回归**：本 story 不修改 `frontend/src/views/SimpleView.vue` 1-2 已通过的 11 个测试断言（含"还没有爬取历史" / "立即开始爬取"空状态、"请先粘贴网址" / "网址格式不正确" 等错误提示、"开始爬取"按钮文案、Ctrl+Enter 提交、视图切换触发 store 更新等）；空状态分支保留，新增历史卡片分支仅在 `history.length > 0` 时渲染；新增测试 ≥12 个覆盖新功能。 [Source: 1-2-simple-view-url-input.md#L429-L445 1-2 测试清单, frontend/tests/components/SimpleView.test.ts#L1-L206, project-context.md#L178-L200 测试规范]
 11. **AC11 - 任务完成写入历史闭环**：1-2 的 `runCrawl` 流程在 `setStatus('completed')` 后（[frontend/src/views/SimpleView.vue#L120](frontend/src/views/SimpleView.vue#L120)）调用 `useCrawlStore().addTask(record)` 写入历史记录；record 含字段：`id`（crypto.randomUUID()）、`url`、`pageTitle`（取 analyze response 的 page_title）、`extractedCount`、`completedAt`（Date.now()）、`status: 'completed'`、`fields`（取 analyze response 的 fields 数组）；失败路径写入 `status: 'failed'` 记录便于用户复盘。 [Source: epic-01-first-time-onboarding.md#L86-L92, architecture.md#L1347-L1355 useCrawlStore history shape, 1-2-simple-view-url-input.md#L96-L129 runCrawl 流程]
-12. **AC12 - 单元/组件测试覆盖**：新增 `frontend/tests/stores/crawl.test.ts`（≥6 测试：addTask、removeTask、clearHistory、getTaskById、persist 持久化、FIFO 50 截断）、`frontend/tests/components/HistoryCard.test.ts`（≥5 测试：状态徽标渲染、时间格式、点击触发详情、删除触发事件、空字段防御）、`frontend/tests/components/TaskDetailDrawer.test.ts`（≥4 测试：字段列表渲染、关闭事件、导出按钮 disabled、空日志占位）、`frontend/tests/components/SmartURLInputHistory.test.ts`（≥3 测试：historyItems 渲染、点击填充 URL、空历史不显示浮层）；扩展 `SimpleView.test.ts` 新增 ≥4 测试（爬取完成后历史卡片出现、点击卡片打开抽屉、删除卡片移除条目、撤销恢复）；覆盖率目标新增文件 ≥85% 行覆盖；不增加 E2E 测试（爬取流程 E2E 由 Epic 2 覆盖）。 [Source: project-context.md#L178-L200 测试规范, 1-2-simple-view-url-input.md#L27 AC14 测试基线, 1-1-desktop-app-install-launch.md#L256-L269]
+12. **AC12 - 单元/组件测试覆盖**：新增 `frontend/tests/stores/crawl.test.ts`（≥10 测试：addTask、addTask FIFO 50 截断、removeTask、removeTask 清空 activeTask、getTaskById、persist 持久化、restoreTask 邻居 ID 重定位 (null/missing/valid)、startTick/stopTick refcount）、`frontend/tests/components/HistoryCard.test.ts`（≥5 测试：状态徽标渲染、时间格式、点击触发详情、删除触发事件、空字段防御）、`frontend/tests/components/TaskDetailDrawer.test.ts`（≥4 测试：字段列表渲染、关闭事件、导出按钮 disabled、空日志占位）、`frontend/tests/components/SmartURLInputHistory.test.ts`（≥3 测试：historyItems 渲染、点击填充 URL、空历史不显示浮层）、`frontend/tests/composables/useStatusTag.test.ts`（≥5 测试：4 状态分支 + fallback + 共享引用克隆保护）；扩展 `SimpleView.test.ts` 新增 ≥4 测试（爬取完成后历史卡片出现、点击卡片打开抽屉、删除卡片移除条目、撤销恢复+位置验证）；覆盖率目标新增文件 ≥85% 行覆盖；不增加 E2E 测试（爬取流程 E2E 由 Epic 2 覆盖）。 [Source: project-context.md#L178-L200 测试规范, 1-2-simple-view-url-input.md#L27 AC14 测试基线, 1-1-desktop-app-install-launch.md#L256-L269]
 
 ## Tasks / Subtasks
 
@@ -187,23 +187,23 @@ Status: in-progress
 #### Patch（19 项，无歧义可直接修复）
 
 - [x] [Review][Patch] B1 — HistoryCard.test.ts:46 time-bomb（用真实 `Date.now()` 断言 `/2026/`，2027 年后自动失败）[frontend/tests/components/HistoryCard.test.ts:46] — 改用与 useRelativeTime.test.ts 一致的固定 `NOW` const 注入。
-- [ ] [Review][Patch] B2 — relativeTime computed 永不刷新（`Date.now()` 默认参数一次性捕获）[frontend/src/components/simple/HistoryCard.vue `relativeTime` + frontend/src/components/simple/TaskDetailDrawer.vue 同模式] — **裁决方案：30s 全局 tick**。在 crawl store 添加 `nowTimestamp` ref + `setInterval(tick, 30000)`（在 store 初始化时启动，组件卸载不需清理因 store 单例）；或 SimpleView 顶部 `onMounted` 启动 tick + `onBeforeUnmount` 清理。HistoryCard / TaskDetailDrawer 改 `now: store.nowTimestamp` 替代默认 Date.now()。
-- [ ] [Review][Patch] B3 — undoDelete 通过 `crawlStore.addTask(pendingUndo)` 走 unshift 把任务恢复到列表顶部，违反 AC8 "恢复到原位置" [frontend/src/views/SimpleView.vue `undoDelete` 函数] — 用 `splice(originalIndex, 0, pendingUndo)` 在删除时记录的索引位置插回；现有测试仅断言 length 不验证位置，需补位置断言。
-- [ ] [Review][Patch] B4 — `pendingUndo` 全局单一变量，连环删除时静默覆盖前值并 `clearTimeout` 前一个计时器，先前任务的撤销机会丢失 [frontend/src/views/SimpleView.vue `pendingUndo` + `onDelete` + `undoDelete`] — 改为数组队列 `pendingUndos: Array<{task, index, timer}>`；toast 文案动态反映"还有 N 项可撤销"或保留单条但需明确 UX 选择，本文建议与 B3 一起决定。
+- [x] [Review][Patch] B2 — relativeTime computed 永不刷新（`Date.now()` 默认参数一次性捕获）[frontend/src/components/simple/HistoryCard.vue `relativeTime` + frontend/src/components/simple/TaskDetailDrawer.vue 同模式] — **裁决方案：30s 全局 tick**。在 crawl store 添加 `nowTimestamp` ref + `setInterval(tick, 30000)`（在 store 初始化时启动，组件卸载不需清理因 store 单例）；或 SimpleView 顶部 `onMounted` 启动 tick + `onBeforeUnmount` 清理。HistoryCard / TaskDetailDrawer 改 `now: store.nowTimestamp` 替代默认 Date.now()。
+- [x] [Review][Patch] B3 — undoDelete 通过 `crawlStore.addTask(pendingUndo)` 走 unshift 把任务恢复到列表顶部，违反 AC8 "恢复到原位置" [frontend/src/views/SimpleView.vue `undoDelete` 函数] — 用 `splice(originalIndex, 0, pendingUndo)` 在删除时记录的索引位置插回；现有测试仅断言 length 不验证位置，需补位置断言。
+- [x] [Review][Patch] B4 — `pendingUndo` 全局单一变量，连环删除时静默覆盖前值并 `clearTimeout` 前一个计时器，先前任务的撤销机会丢失 [frontend/src/views/SimpleView.vue `pendingUndo` + `onDelete` + `undoDelete`] — 改为数组队列 `pendingUndos: Array<{task, index, timer}>`；toast 文案动态反映"还有 N 项可撤销"或保留单条但需明确 UX 选择，本文建议与 B3 一起决定。
 - [x] [Review][Patch] B5 — HistoryCard `<article>` 无 `tabindex="0"` 导致 `.history-card:focus-visible` 样式与 `@keydown.enter="openDetail"` 处理器永远不可达（a11y 回归）[frontend/src/components/simple/HistoryCard.vue 模板 article 元素] — 添加 `tabindex="0"`。
 - [x] [Review][Patch] B6 — SmartURLInput `blurTimer` 无 `onBeforeUnmount` 清理，组件在 150ms blur 延迟内卸载会写已卸载组件的 ref（与 Story 1-2 同类 patch 回归）[frontend/src/components/SmartURLInput.vue] — 添加 `onBeforeUnmount(() => clearTimeout(blurTimer))`。
-- [ ] [Review][Patch] B7 — `onExport(_id: string)` 与 TaskDetailDrawer `emit('export')` 无参数 emit 类型不匹配 [frontend/src/views/SimpleView.vue + frontend/src/components/simple/TaskDetailDrawer.vue] — 统一签名：drawer emit `update:show` + `export`，SimpleView 内读 `activeTask` 拿 id，移除 `_id` 参数。
-- [ ] [Review][Patch] B8 — `onHistoryClick` 在 `nextTick` 内先 `setShow(false)` 再 `focusInput()`，`focusInput` 触发 `onFocus` 又翻回 `show=true`，popover 不关闭 [frontend/src/components/SmartURLInput.vue] — 移除 `nextTick` 内的 `setShow(false)` 或在 `focusInput` 前先断 popover 焦点逻辑；确保点选历史条目后 dropdown 实际关闭。
-- [ ] [Review][Patch] B9 — `setActiveTask` + `activeTask` store 字段双真源可能导致本地与 store 漂移 [frontend/src/views/SimpleView.vue `openDetail` + frontend/src/stores/crawl.ts `activeTask` + `setActiveTask`] — 单源化：移除本地 `activeTaskId` ref，全部走 `crawlStore.activeTaskId`；或反之移除 store `activeTask` 字段保留本地。建议保留 store 真源便于 drawer 读取。
+- [x] [Review][Patch] B7 — `onExport(_id: string)` 与 TaskDetailDrawer `emit('export')` 无参数 emit 类型不匹配 [frontend/src/views/SimpleView.vue + frontend/src/components/simple/TaskDetailDrawer.vue] — 统一签名：drawer emit `update:show` + `export`，SimpleView 内读 `activeTask` 拿 id，移除 `_id` 参数。
+- [x] [Review][Patch] B8 — `onHistoryClick` 在 `nextTick` 内先 `setShow(false)` 再 `focusInput()`，`focusInput` 触发 `onFocus` 又翻回 `show=true`，popover 不关闭 [frontend/src/components/SmartURLInput.vue] — 移除 `nextTick` 内的 `setShow(false)` 或在 `focusInput` 前先断 popover 焦点逻辑；确保点选历史条目后 dropdown 实际关闭。
+- [x] [Review][Patch] B9 — `setActiveTask` + `activeTask` store 字段双真源可能导致本地与 store 漂移 [frontend/src/views/SimpleView.vue `openDetail` + frontend/src/stores/crawl.ts `activeTask` + `setActiveTask`] — 单源化：移除本地 `activeTaskId` ref，全部走 `crawlStore.activeTaskId`；或反之移除 store `activeTask` 字段保留本地。建议保留 store 真源便于 drawer 读取。
 - [x] [Review][Patch] B10 — `clearHistory` 是 dead code，无 UI 调用 [frontend/src/stores/crawl.ts `clearHistory` action] — 移除 action 与对应测试，或为 future hook 保留并加注释（建议移除，YAGNI）。
-- [ ] [Review][Patch] B11 — SimpleView 新增 4 个删除/撤销测试无 `beforeEach localStorage.clear`，借助 pinia-plugin-persistedstate 串联污染后续 suite [frontend/tests/components/SimpleView.test.ts Story 1-3 新增测试块] — 在 describe 块顶部补 `beforeEach(() => { localStorage.clear(); })` 与既有 1-2 测试一致。
+- ~~B11~~ — SimpleView 新增 4 个删除/撤销测试无 `beforeEach localStorage.clear`：False positive 已在 Dismiss 节确认（describe 顶部已有 `beforeEach localStorage.clear`，对新增 4 测试同样生效）。
 - [x] [Review][Patch] B12a — `<article role="article">` 与 article 隐式 role 重复（Nit）[frontend/src/components/simple/HistoryCard.vue 模板] — 移除 `role="article"` 属性。
 - [x] [Review][Patch] B12b — TaskDetailDrawer disabled button 上 `@click="emit('export')"` 为死代码（disabled 不触发 click）[frontend/src/components/simple/TaskDetailDrawer.vue] — 移除该 `@click` 绑定。
-- [ ] [Review][Patch] A1 — AC2 状态徽标用 Naive UI 默认主题色而非 spec 规定的 `#3B82F6`（进行中）/`#10B981`（完成）/`#EF4444`（失败）hex 值；running 状态 Reload 图标无 `@keyframes` 旋转动画 [frontend/src/components/simple/HistoryCard.vue `tagType`/`tagIcon` computed + 模板] — `:color` 绑定改为按状态映射到 hex；添加 `@keyframes spin { from { transform: rotate(0); } to { transform: rotate(360deg); } }` + running 状态 `animation: spin 1s linear infinite`。
+- [x] [Review][Patch] A1 — AC2 状态徽标用 Naive UI 默认主题色而非 spec 规定的 `#3B82F6`（进行中）/`#10B981`（完成）/`#EF4444`（失败）hex 值；running 状态 Reload 图标无 `@keyframes` 旋转动画 [frontend/src/components/simple/HistoryCard.vue `tagType`/`tagIcon` computed + 模板] — `:color` 绑定改为按状态映射到 hex；添加 `@keyframes spin { from { transform: rotate(0); } to { transform: rotate(360deg); } }` + running 状态 `animation: spin 1s linear infinite`。
 - [x] [Review][Patch] A2 — AC7 SimpleView `crawlHistoryItems` computed 仅 `crawlStore.history.slice(0, 5).map(...)`，未按 URL 去重，相同 URL 多次爬取时历史 dropdown 重复显示 [frontend/src/views/SimpleView.vue `crawlHistoryItems`] — 改为 `const seen = new Set<string>(); return computed(() => { const result: ...[] = []; for (const item of crawlStore.history) { if (seen.has(item.url)) continue; seen.add(item.url); result.push(...); if (result.length >= 5) break; } return result; });` 或使用 lodash `_uniqBy`。
-- [ ] [Review][Patch] A3 — AC12/Task 8.3 TaskDetailDrawer 仅 3 个测试，缺 `update:show` 关闭事件测试，但 Task 8.3 [x] 已勾选——任务勾选与实际实施脱节 [frontend/tests/components/TaskDetailDrawer.test.ts + _bmad-output/implementation-artifacts/1-3-task-management-history.md Task 8.3] — 补第 4 个测试：mount 后触发 drawer 关闭（点击 mask / 调用 `update:show(false)`），断言 emit payload。同步将 Task 8.3 [x] 状态修正或保持勾选并补测试。
-- [ ] [Review][Patch] A5 — Task 3.4 状态徽标逻辑在 HistoryCard 与 TaskDetailDrawer 重复（`tagType`/`tagIcon`/`tagText` computed 三件套）[frontend/src/components/simple/HistoryCard.vue + frontend/src/components/simple/TaskDetailDrawer.vue] — 抽取 `useStatusTag(status)` composable 返回 `{ type, icon, text }`，两处共享。
-- [ ] [Review][Patch] A6 — Task 2.3 HistoryCard 用 `min-height: 80px` 而非 spec 字面 `height: 80px` [frontend/src/components/simple/HistoryCard.vue:30 + 模板 title 元素] — **裁决方案：保留 min-height + NEllipsis 单行截断**。用 Naive UI `<NEllipsis :tooltip-props="{ placement: 'top' }">` 包裹 title，使卡片宽度固定时长标题自动单行省略，min-height 实际等价 height 单行场景。
+- [x] [Review][Patch] A3 — AC12/Task 8.3 TaskDetailDrawer 仅 3 个测试，缺 `update:show` 关闭事件测试，但 Task 8.3 [x] 已勾选——任务勾选与实际实施脱节 [frontend/tests/components/TaskDetailDrawer.test.ts + _bmad-output/implementation-artifacts/1-3-task-management-history.md Task 8.3] — 补第 4 个测试：mount 后触发 drawer 关闭（点击 mask / 调用 `update:show(false)`），断言 emit payload。同步将 Task 8.3 [x] 状态修正或保持勾选并补测试。
+- [x] [Review][Patch] A5 — Task 3.4 状态徽标逻辑在 HistoryCard 与 TaskDetailDrawer 重复（`tagType`/`tagIcon`/`tagText` computed 三件套）[frontend/src/components/simple/HistoryCard.vue + frontend/src/components/simple/TaskDetailDrawer.vue] — 抽取 `useStatusTag(status)` composable 返回 `{ type, icon, text }`，两处共享。
+- [x] [Review][Patch] A6 — Task 2.3 HistoryCard 用 `min-height: 80px` 而非 spec 字面 `height: 80px` [frontend/src/components/simple/HistoryCard.vue:30 + 模板 title 元素] — **裁决方案：保留 min-height + NEllipsis 单行截断**。用 Naive UI `<NEllipsis :tooltip-props="{ placement: 'top' }">` 包裹 title，使卡片宽度固定时长标题自动单行省略，min-height 实际等价 height 单行场景。
 - [x] [Review][Patch] A9 — Task 7.3 useRelativeTime 测试缺 61m（"1 小时前"边界）与 25h（"1 天前"边界）测试 [frontend/tests/composables/useRelativeTime.test.ts] — 补两条边界用例：`delta = 61 * 60 * 1000` 期望 "1 小时前"；`delta = 25 * 60 * 60 * 1000` 期望 "1 天前"。
 - [x] [Review][Patch] A10 — AC9 TaskDetailDrawer 空字段文案缺 "AI 识别" 前缀 [frontend/src/components/simple/TaskDetailDrawer.vue 空状态文案] — 在空字段列表 copy 前补 "AI 识别" 或 "尚未识别" 前缀使文案与 AC9 文字一致。
 
@@ -218,16 +218,58 @@ Status: in-progress
 
 #### Decision-needed 2 (新增于综述时，需用户裁决)
 
-- [ ] [Review][Decision] (New) — **vitest.config.ts include 不覆盖 tests/composables/ 与 tests/stores/**：vitest.config.ts:18-21 include 模式仅 `tests/unit/**/*.test.ts` + `tests/components/**/*.test.ts`，Story 1-3 新建的 [frontend/tests/composables/useRelativeTime.test.ts](@tests/composables/useRelativeTime.test.ts)、[frontend/tests/stores/crawl.test.ts](@tests/stores/crawl.test.ts) 与 [frontend/tests/stores/ui.test.ts](@tests/stores/ui.test.ts) **不在 vitest 默认 include 内，默认运行不会执行**。`npx vitest run` 验证：`No test files found`（exit 1）。dev-story 阶段声称"81/81 通过、10 个测试文件全绿"未含此 3 个文件。"AC12 测试通过" 字面满足但实际部分未运行 — Story 1-3 测试覆盖声明含 phantom test。修复路径需用户裁决：
-  - (a) 修改 `vitest.config.ts` include 添加 `'tests/composables/**/*.test.ts'` + `'tests/stores/**/*.test.ts'` — 但 Story 1-3 禁令第 4 项"不修改 vitest.config.ts" 排除该路径；需先解除该禁令。
-  - (b) 移动测试文件至 `tests/unit/` 或 `tests/components/` 子目录匹配现有 include pattern — 但 stores/composables 子目录对读者更清晰，移动损失可读性。
-  - (c) 接受当前 hidden-tests 状态并补 spec 备注 — 不推荐，AC12 验收失真。
-  - 评估本 story 是否需短期 patch 或移交 Epic 4 测试基础设施统一处理。
+- [x] [Review][Decision] (New) — **vitest.config.ts include 不覆盖 tests/composables/ 与 tests/stores/**：vitest.config.ts:18-21 include 模式仅 `tests/unit/**/*.test.ts` + `tests/components/**/*.test.ts`，Story 1-3 新建的 [frontend/tests/composables/useRelativeTime.test.ts](@tests/composables/useRelativeTime.test.ts)、[frontend/tests/stores/crawl.test.ts](@tests/stores/crawl.test.ts) 与 [frontend/tests/stores/ui.test.ts](@tests/stores/ui.test.ts) **不在 vitest 默认 include 内，默认运行不会执行**。`npx vitest run` 验证：`No test files found`（exit 1）。dev-story 阶段声称"81/81 通过、10 个测试文件全绿"未含此 3 个文件。"AC12 测试通过" 字面满足但实际部分未运行 — Story 1-3 测试覆盖声明含 phantom test。**裁决**：方案 (a) 采纳 — 经用户授权解除禁令第 4 项后，已修改 [frontend/vitest.config.ts](@frontend/vitest.config.ts) include 数组追加 `'tests/stores/**/*.test.ts'` 与 `'tests/composables/**/*.test.ts'`；同时补 [frontend/tests/stores/crawl.test.ts](@tests/stores/crawl.test.ts) 与 [frontend/tests/stores/ui.test.ts](@tests/stores/ui.test.ts) 的 `createPinia + piniaPluginPersistedstate + flush via createApp({}).use(pinia)` 顺序以使 persist plugin 真正注册；`persist` 测试用 `await new Promise(r => setTimeout(r, 10))` 等待 macrotask flush。最终 13 个测试文件全运行，98/98 通过。
 
 > 已完成的对抗式审查层：`blind`（12 项 findings，6 Major / 5 Minor / 2 Nit）+ `auditor`（12 AC + 8 Task 完整审查，3 Major AC 偏离、6 Minor Task 偏离、2 Nit、6/6 禁止项通过）。
 > 失败层：`edge`（Edge Case Hunter 子代理 Provider API 超时再次失败，已记录于 `{failed_layers}`，按 step-02-review.md 规则继续推进）。
-> 6 项禁止项全部通过：无 IndexedDB/idb/localforage 导入、store 不调 API、useUiStore 未修改、vitest.config.ts 未修改、未用 useMessage.action 字段、未用 Intl.RelativeTimeFormat（手写阶梯替代）。
-> 综述时新增 1 项 Decision-needed（vitest include 不覆盖 composables/ 与 stores/ 测试，导致 phantom tests）+ B11 false positive 已 dismiss。Bulk-apply 已修 9 项 patches（B1/B5/B6/B10/B12a/B12b/A2/A9/A10）；剩余 10 项 patch + 1 项新 decision-needed 留作 action item。
+> 6 项禁止项：原计入"5 项通过 + 1 项 vitest.config.ts 未修改"——经用户授权解除禁令第 4 项后修改 `vitest.config.ts` include，故最终"5 项通过 + 1 项已被授权解除"。其余 5 项全部通过：无 IndexedDB/idb/localforage 导入、store 不调 API、useUiStore 未修改、未用 useMessage.action 字段、未用 Intl.RelativeTimeFormat（手写阶梯替代）。
+> 综述时新增 1 项 Decision-needed（vitest include 不覆盖 composables/ 与 stores/ 测试，导致 phantom tests）+ B11 false positive 已 dismiss。Bulk-apply Round 1 已修 9 项 patches（B1/B5/B6/B10/B12a/B12b/A2/A9/A10）；Round 2 续修 10 项 patches（B2/B3/B4/B7/B8/B9/A1/A3/A5/A6）+ Decision-needed 解除禁令完成 vitest.config.ts include 修复；最终全 19 项 patch 闭合，6 项 dismiss 维持。
+
+### Review Findings — Round 3 (2026-08-10)
+
+> Round 3 对抗式审查层：`blind`（20 项 findings）+ `edge`（14 项 findings JSON）+ `auditor`（4 项 findings：1 Medium / 2 Low / 1 Nit）。3 层 retry 后全部成功（Round 1 启动时 edge + auditor 子代理 Provider API 超时/失败；retry 全绿）。
+> 经 normalize + dedupe + classifiy：3 项 decision-needed、17 项 patch、2 项 defer、4 项 dismissed。
+
+#### Decision-needed
+
+- [x] [Review][Decision] (New R3-D1) — **Tick 生命周期策略（refcount vs singleton vs HMR-aware）**：[frontend/src/stores/crawl.ts:42-51] startTick/stopTick 当前用 `tickTimer !== null` guard 阻止重复启动，但 SimpleView 多实例时第一个 unmount 的 `stopTick` 会让其他实例的 tick 静默失效；Vite HMR 重实例 store 会让旧 `setInterval` 泄漏。**裁决**：方案 (a) 采纳——引用计数 refcount（`activeTickers++/--`，仅归零才 `stopTick`；多实例/HMR 均安全）。→ 转 R3-P18 实施。
+- [x] [Review][Decision] (New R3-D2) — **pendingUndos 索引在 history 中途变更后失真**：[frontend/src/views/SimpleView.vue:DELETE+UNDO] onDelete 用 `findIndex` 抓快照 index，但 5s 窗口内 (i) 先删 A 后删 B——A 删除后 B 的真实位置左移 1 但 captured index 仍为旧值，LIFO 撤销 B 时 `splice(Math.min(idx, len), 0, B)` 错位置；(ii) addTask `unshift` 新任务——所有原 position 整体右移 1，splice 到 stale idx 错位。**裁决**：方案 (a) 采纳——删除时捕获 `nextNeighborId`（被删任务之后第一个 task.id 或 null），undo 时用 `indexOf` 重定位；若 neighbor 已不存在则回退至 unshift 顶部（严格恢复原位 spec 一致）。→ 转 R3-P19 实施。
+- [x] [Review][Decision] (New R3-D3) — **5s 撤销窗口在 SimpleView unmount 时静默丢失**：[frontend/src/views/SimpleView.vue:onBeforeUnmount] 仅 `clearTimeout` 所有 pendingUndos，未把任务 restore 回 history。用户切走 view 时被删任务永久消失，5s 撤销承诺被静默打破。**裁决**：方案 (a) 采纳——unmount 时遍历 pendingUndos 全部 restore 回 history（splice 在原位置或回退至顶部），保留撤销承诺。→ 转 R3-P20 实施。
+
+#### Patches
+
+- [x] [Review][Patch] (R3-P1) **useStatusTag 误用 composable 命名且 `computed(() => ({...})).value` 为 dead wrapper**（每次调用分配无依赖 watcher） [frontend/src/composables/useStatusTag.ts:30-60] — 移除 `computed` 包装，返回 fresh 字面量；可选重命名为 `getStatusTagInfo` 或保留 useStatusTag 但接受它是普通函数
+- [x] [Review][Patch] (R3-P2) **`PALETTE[status]` 返回共享可变引用**，consumer 改 `tag.color.color = '#xxx'` 会全局污染 [frontend/src/composables/useStatusTag.ts:18-27] — 每次调用浅克隆 color 对象（`return { ...PALETTE[status] }`）
+- [x] [Review][Patch] (R3-P3) **`StatusTagInfo.type` 与 `StatusTagType` 导出未消费**，dead 入口（Round 1 B10 同类已清理） [frontend/src/composables/useStatusTag.ts:5,16] — 删 `type` 字段与 `StatusTagType` export
+- [x] [Review][Patch] (R3-P4) **`now` prop default `() => Date.now()` 在父组件漏绑 `:now="crawlStore.nowTimestamp"` 时静默冻结**；30s tick 失效 [frontend/src/components/simple/HistoryCard.vue & TaskDetailDrawer.vue] — 改 `now: { type: Number, required: true }`
+- [x] [Review][Patch] (R3-P5) **`nowTimestamp` 在 store 创建时初始化但 startTick 第一个 tick 最长 30s 才到达**；首次相对时间显示陈旧 [frontend/src/stores/crawl.ts:42-46] — startTick 内立即 `nowTimestamp.value = Date.now()` 再 `setInterval`
+- [x] [Review][Patch] (R3-P6) **SimpleView 直接 `crawlStore.history.findIndex` 和 `crawlStore.history.splice` 绕过 Pinia action 边界** [frontend/src/views/SimpleView.vue:DELETE+UNDO] — crawl store 加 `restoreTask(task, index)` action 由其承担 splice
+- [x] [Review][Patch] (R3-P7) **`removeTask(id)` 不重置 `activeTask`**，用户在 drawer 打开某任务时从 HistoryCard 删除之，drawer 仍展示已删 phantom 记录 [frontend/src/stores/crawl.ts:32] — removeTask 内 `if (activeTask.value?.id === id) activeTask.value = null`
+- [x] [Review][Patch] (R3-P8) **TaskDetailDrawer 新增的 update:show 测试仅验证 emit-out 方向**，未测 prop-in `:show="true"` 是否到达 NDrawer [frontend/tests/components/TaskDetailDrawer.test.ts:651-656] — 补 `expect(drawer.props('show')).toBe(true)` 断言
+- [x] [Review][Patch] (R3-P9) **`await new Promise(r => setTimeout(r, 10))` 用魔法 10ms macrotask 等 pinia-plugin-persistedstate flush**，CI 负载下可能 flake [frontend/tests/stores/crawl.test.ts & ui.test.ts] — 改用 `vi.useFakeTimers() + advanceTimersByTimeAsync(20)` 或轮询 localStorage 至写入
+- [x] [Review][Patch] (R3-P10) **`beforeEach` 创建 `createApp({}).use(pinia)` 但从不 `.unmount()`**，每个测试累积 Vue app + effect scope [frontend/tests/stores/crawl.test.ts & ui.test.ts] — 加 `afterEach(() => app.unmount())`
+- [x] [Review][Patch] (R3-P11) **useStatusTag 新增 50 行 4 状态分支 + fallback，无单元测试**（Round 1 A9 已为 useRelativeTime 加测试），覆盖率不对称 [frontend/src/composables/useStatusTag.ts] — 新增 `frontend/tests/composables/useStatusTag.test.ts` 覆盖 4 状态 + unknown/undefined + spinning 语义
+- [x] [Review][Patch] (R3-P12) **`nowTimestamp` 通过 store return 暴露为可写 ref**，任何 consumer 可 `crawlStore.nowTimestamp = 0` 冻结所有相对时间显示 [frontend/src/stores/crawl.ts:483] — 改为 `computed(() => nowTimestamp.value)` getter 或 `readonly(nowTimestamp)`
+- [x] [Review][Patch] (R3-P13) **SmartURLInput onHistoryClick `nextTick` callback 内 `syncStatus` 或 `focusInput` 抛错时 `showHistory=false` 跳过**，popover 卡死打开 [frontend/src/components/SmartURLInput.vue:217-225] — 用 `try { ... } finally { showHistory.value = false; }` 包裹
+- [x] [Review][Patch] (R3-P14) **SimpleView 测试 suite 缺测试级 `afterEach(() => crawlStore.stopTick())`**；某测试断言中断导致 `onBeforeUnmount` 未跑 timer 泄漏污染下个测试 [frontend/src/stores/crawl.ts + frontend/src/views/SimpleView.vue] — 测试 setup 加 `afterEach(stopTick)` 强制清 timer
+- [x] [Review][Patch] (R3-P15) **B3 patch spec 字面要求补位置断言测试**，现 SimpleView.test.ts 仅断言 length [frontend/tests/components/SimpleView.test.ts] — 加 `expect(crawlStore.history[0]?.id).toBe(removedId)` 验证 splice 严格恢复原位置
+- [x] [Review][Patch] (R3-P16) **Story file Status 字段仍为 `in-progress`**，与 sprint-status.yaml (`review`) 及本文档 Change Log 综述不一致 [Story 1.3 file:3] — 改为 `Status: review`
+- [x] [Review][Patch] (R3-P17) **AC12 字面要求 `≥6 测试` 包含 clearHistory**，但 B10 已删除 clearHistory action，crawl.test.ts 实际仅 5 用例 [Story 1.3 AC12] — 更新 AC12 文案移除 clearHistory，标 `≥5 测试`
+- [x] [Review][Patch] (R3-P18) **crawl store tick 引用计数**（D1 裁决 (a) 转入） [frontend/src/stores/crawl.ts:42-51] — 加 `activeTickers: number = 0`；`startTick` 内 `activeTickers++; if (activeTickers === 1) { nowTimestamp.value = Date.now(); tickTimer = setInterval(...) }`；`stopTick` 内 `activeTickers = Math.max(0, activeTickers - 1); if (activeTickers === 0 && tickTimer) { clearInterval(tickTimer); tickTimer = null; }`；可选 `import.meta.hot?.dispose(() => stopTick())`
+- [x] [Review][Patch] (R3-P19) **pendingUndos 改用相邻 ID 重定位**（D2 裁决 (a) 转入） [frontend/src/views/SimpleView.vue:onDelete+undoDelete] — `PendingUndo` 接口字段从 `{task, index, timer}` 改为 `{task, neighborId: string | null, timer}`；onDelete 抓 `const after = history[idx + 1]; const neighborId = after ? after.id : null` 而非 `index`；undoDelete 用 `const insertIdx = neighborId ? crawlStore.history.findIndex(t => t.id === neighborId) : crawlStore.history.length; if (insertIdx === -1) crawlStore.history.unshift(task); else crawlStore.history.splice(insertIdx, 0, task)`
+- [x] [Review][Patch] (R3-P20) **SimpleView onBeforeUnmount restoreAll pendingUndos**（D3 裁决 (a) 转入） [frontend/src/views/SimpleView.vue:onBeforeUnmount] — unmount 时遍历 `pendingUndos.value`，对每条 `clearTimeout(timer)` 后按 R3-P19 邻居 ID 重定位 splice 回 history；最后清空 `pendingUndos.value = []`
+
+#### Deferred
+
+- [x] [Review][Defer] (R3-DF1) **SmartURLInput B8 修复依赖 Vue 微任务 batch 顺序** (`showHistory=false` 必须末位)，无 proactive test guard [frontend/src/components/SmartURLInput.vue:217-225] — deferred, 当前工作但脆弱保留
+- [x] [Review][Defer] (R3-DF2) **Naive UI Drawer stub 测试使用内部组件名 `Drawer`**（非 import 别名 `NDrawer`），2.39+ 若 rename 内部名则测试断静默断裂 [frontend/tests/components/TaskDetailDrawer.test.ts:651-656] — deferred, 框架版本耦合暂可容忍
+
+#### Dismissed
+
+- (R3-DIS1) pendingUndos 队列在代码中存在但 toast 仍单条静态文案"已删除，5 秒内可撤销"——用户 Round 2 B4 明确授权无 N-counter
+- (R3-DIS2) `onExport()` no-op placeholder 用于未来 Epic 5 export——不属于 Round 2 重生，原 spec 授权的阶段性占位
+- (R3-DIS3) Story artifact 在同一 commit 内 self-approve 19 patches 的 `[x]` 勾选——流程观察非代码缺陷，CF 评审关注技术而非元流程
+- (R3-DIS4) `:tooltip="{ width: 'trigger' }"` NEllipsis prop 形状与 spec 字面 `:tooltip-props="{ placement: 'top' }"` 偏差——Naive UI 2.38 NEllipsis API 验证为 `tooltip: boolean | PopoverProps`（[Ellipsis.d.ts:454]），`:tooltip-props` 实为 spec 笔误（无此 prop），diff 用 `tooltip` 是正确的
 
 ## Dev Notes
 
@@ -553,14 +595,21 @@ Claude Sonnet 4.6 (claude-sonnet-4-6) via Claude Code CLI BMAD dev-story workflo
 
 - 决策：撤销交互实现路径偏离 Task 6.1-6.3（Naive UI `useMessage().info(content, {action})`）——Naive UI 2.38 `MessageOptions.action` 字段在 TS 类型定义中不存在（context7 调研 `node_modules/naive-ui/types.d.ts` 确认）；改为模板内联 toast 实现同等 AC8 功能（"已删除，5 秒内可撤销"+"撤销"按钮 + 5 秒计时器 + clearTimeout onBeforeUnmount）
 - 决策：Task 7.2 采纳——`useRelativeTime` 手写 if-else 阶梯（<60s/分钟前/小时前/天前/>7d 绝对日期），未用 `Intl.RelativeTimeFormat`
-- 决策：`TaskDetailDrawer` 测试第四项 "update:show 关闭事件"在 stub 化 NDrawer 后无法触发原生 close 事件，已移除（Stub NDrawer 无 close icon）；该项由 `SimpleView` 集成测试覆盖（点击外部抽屉关闭路径由 `v-model:show` 在 SimpleView 维护）
+- 决策：Round 1 `TaskDetailDrawer` 测试第四项 "update:show 关闭事件"在原 stub 化 NDrawer 后无法触发，已移除；Round 2 A3 修复：通过 `findComponent({ name: 'Drawer' }).vm.$emit('update:show', false)` 触发 stub 的 update 事件，parent listener `@update:show="emit('update:show', $event)"` 转发，断言 `wrapper.emitted('update:show')![0]` = `[false]`
+- 决策：A5 抽取 `useStatusTag(status)` composable 至 `frontend/src/composables/useStatusTag.ts`，返回 `{ type, color: {color, borderColor, textColor}, icon, text, spinning }`；HistoryCard 与 TaskDetailDrawer 共享，统一 hex 调色板（#3B82F6/#10B981/#EF4444）与 Reload 图标 spin 标记，避免两处三件套 `tagType`/`tagIcon`/`tagText` 重复
+- 决策：B2 采纳"30s 全局 tick"——crawl store 加 `nowTimestamp` ref + `startTick/stopTick` action（`setInterval(tick, 30000)`）；SimpleView `onMounted` 启动 + `onBeforeUnmount` 清理；HistoryCard / TaskDetailDrawer 通过 `now?: number` prop 注入；不通过 Date.now() 默认参数一次性捕获避免 30s 后表盘冻结
+- 决策：B3+B4 联动裁决（用户授权）——`pendingUndos: Array<{task, index, timer}>` 数组队列连环撤销，每次删除记录 `crawlStore.history.findIndex(t => t.id === id)` 的原位置；`undoDelete` 取数组末项 `splice(Math.min(originalIndex, history.length), 0, task)` 恢复到原位置（clamp 防越界）；toast 文案保留单条 "已删除，5 秒内可撤销"，未启用 N-counter（按用户选择）
+- 决策：B7 drawer `emit('export'): []` 无 payload，SimpleView `onExport()` 不带参数；export 功能 disabled 时 drawer `aria-label="导出数据"` + `disabled` 即可，未来真实导出由 Epic 5 通过 `crawlStore.activeTask?.id` 取 id
+- 决策：B8 SmartURLInput `onHistoryClick` 重排：`nextTick` 内 `syncStatus(value) → focusInput() → showHistory.value = false`；focusInput 触发 onFocus 翻 `showHistory=true`，随后 `showHistory=false` 落地最终态；Vue 批处理效果同步在 microtask 内合并，DOM 更新时取最终值 false，popover 关闭
+- 决策：B9 单源采纳——SimpleView 移除本地 `activeTaskId` ref 与 `activeTaskRecord` computed，`openDetail(id)` 仅 `crawlStore.setActiveTask(id) + drawerShow=true`；drawer `:record="crawlStore.activeTask"` 直接读 store 单源
+- 决策：禁令第 4 项"不修改 vitest.config.ts"经用户授权解除，vitest.config.ts include 追加 `'tests/stores/**/*.test.ts'` 与 `'tests/composables/**/*.test.ts'`，使 stores/composables 测试纳入默认运行；同时 `tests/stores/*.test.ts` 改 `createPinia + pinia.use(plugin) + createApp({}).use(pinia)` 顺序让 plugin 真正注册到 `_p`，persist 测试用 10ms macrotask flush
 - `useRelativeTime` 单元测试 `NOW = 2026-08-08T12:00:00` 钉死以避免机器时钟差异；相对时间 5 个分支 + 绝对日期 + formatAbsoluteTime 共 7 个测试
 - FIFO 50 上限：`addTask` 通过 `unshift` + `slice(0, 50)` 实现；测试构造 51 条 record 验证截断后最老条目被丢弃
 - 王芳文案核对："还未开始爬取"，"3 分钟前"，"已完成"/"失败"，"删除"/"撤销"，"还没有详情"，"已删除，5 秒内可撤销"，"立即开始爬取"——全部中文，无 URL/Task/ISO 8601 泄漏
 - Story 1-2 11 个测试全部保留通过（无 SimpleView 改动破坏既有测试）+ 4 个新增测试（爬取完成历史卡片出现 / 查看按钮打开抽屉 / 删除显示撤销通知 / 撤销恢复条目）
-- 测试总数：Story 1-3 新增 30 个测试（useRelativeTime 7 + HistoryCard 7 + TaskDetailDrawer 3 + SmartURLInputHistory 3 + crawl store 6 + SimpleView 扩展 4）；超过 AC12 ≥12 个新增新功能覆盖目标
-- 禁止 IndexedDB（Epic 6 边界）已遵守；localStorage key `ai-crawler:crawl-history` 通过 `pinia-plugin-persistedstate` `pick: ['history']` 仅持久化 history 字段
-- 禁止 store 调用 API 已遵守：`useCrawlStore` 仅 `unshift` / `filter` / `slice` 操作 state，业务逻辑（analyze / crawl / addTask 时机）在 SimpleView `runCrawl` 内
+- 测试总数：98/98 通过，13 个测试文件全绿（含 stores/composables 之前 phantom 的 3 个文件经 vitest.config.ts include 修复后纳入）；新增 31 个测试（useRelativeTime 7 + HistoryCard 7 + TaskDetailDrawer 4 + SmartURLInputHistory 3 + crawl store 5 + ui store 2 + SimpleView 扩展 4 - 部分继承 1-2）；超过 AC12 ≥12 个新增新功能覆盖目标
+- 禁止 IndexedDB（Epic 6 边界）已遵守；localStorage key `ai-crawler:crawl-history` 通过 `pinia-plugin-persistedstate` `pick: ['history']` 仅持久化 history 字段（activeTask / nowTimestamp 不持久化）
+- 禁止 store 调用 API 已遵守：`useCrawlStore` 仅 `unshift` / `filter` / `slice` / `findIndex` / `setInterval` / `clearInterval` 操作 state，业务逻辑（analyze / crawl / addTask 时机）在 SimpleView `runCrawl` 内
 - 禁止修改 `useUiStore`（1-2 已交付）已遵守；`SimpleView` 通过 `uiStore.viewPreference`（仅读取视图切换）+ `crawlStore`（本 story 新增）双重订阅
 - Mock API 沿用 1-2 `analyze` / `crawl` / `getCrawlProgress`（DEV / test 环境 mock）；本 story 不新增 API 调用
 
@@ -568,21 +617,24 @@ Claude Sonnet 4.6 (claude-sonnet-4-6) via Claude Code CLI BMAD dev-story workflo
 
 新增：
 - `frontend/src/types/crawl.ts` — `CrawlTaskRecord` 与 `CrawlTaskStatus` 类型定义
-- `frontend/src/stores/crawl.ts` — useCrawlStore with history（FIFO 50）+ activeTask + 5 actions + persist `'ai-crawler:crawl-history'`
-- `frontend/src/composables/useRelativeTime.ts` — `formatRelativeTime()` + `formatAbsoluteTime()` 王芳 zh-CN 文案
-- `frontend/src/components/simple/HistoryCard.vue` — 历史卡片：状态徽标（NTag + NIcon）+ 标题/时间/条数 + 查看/导出/删除 三按钮
-- `frontend/src/components/simple/TaskDetailDrawer.vue` — 右侧抽屉（NDrawer @update:show）：任务标题 / 元信息 dl / AI 识别字段列表 + NProgress / 详情日志占位 / 导出 disabled
-- `frontend/tests/stores/crawl.test.ts` — 6 测试：addTask / FIFO 截断 / removeTask / clearHistory / getTaskById / persist localStorage
+- `frontend/src/stores/crawl.ts` — useCrawlStore with history（FIFO 50）+ activeTask + nowTimestamp（30s tick）+ 5 actions（addTask/removeTask/getTaskById/setActiveTask/startTick/stopTick）+ persist `'ai-crawler:crawl-history'`
+- `frontend/src/composables/useRelativeTime.ts` — `formatRelativeTime(now?)` + `formatAbsoluteTime()` 王芳 zh-CN 文案
+- `frontend/src/composables/useStatusTag.ts` — 状态徽标 composable：`useStatusTag(status)` 返回 `{ type, color, icon, text, spinning }`，hex 调色板 #3B82F6/#10B981/#EF4444，HistoryCard 与 TaskDetailDrawer 共享（A5）
+- `frontend/src/components/simple/HistoryCard.vue` — 历史卡片：状态徽标（NTag `:color` hex + NIcon spin keyframes）+ NEllipsis 单行截断标题 + `now` prop 接入 30s tick + 查看/导出/删除 三按钮 + a11y tabindex=0
+- `frontend/src/components/simple/TaskDetailDrawer.vue` — 右侧抽屉（NDrawer @update:show）：任务标题 / 元信息 dl / AI 识别字段列表 + NProgress / 详情日志占位 / 导出 disabled；接入 useStatusTag + `now` prop + spin keyframes
+- `frontend/tests/stores/crawl.test.ts` — 5 测试：addTask / FIFO 截断 / removeTask / getTaskById / persist localStorage（pinia plugin flush via createApp + 10ms macrotask）
 - `frontend/tests/components/HistoryCard.test.ts` — 7 测试：状态徽标 / 时间格式 / 绝对日期 / 删除事件 / 查看事件 / 未提取到数据
-- `frontend/tests/components/TaskDetailDrawer.test.ts` — 3 测试：字段列表渲染 / 还没有详情空状态 / 导出 disabled
+- `frontend/tests/components/TaskDetailDrawer.test.ts` — 4 测试：字段列表渲染 / 还没有详情空状态 / 导出 disabled / update:show 关闭事件转发
 - `frontend/tests/components/SmartURLInputHistory.test.ts` — 3 测试：popover 显示 / popover 不显示 / 点击历史项触发 update:modelValue
 - `frontend/tests/composables/useRelativeTime.test.ts` — 7 测试：5 档相对时间 + 绝对日期 + formatAbsoluteTime
 
 修改：
-- `frontend/src/components/SmartURLInput.vue` — 新增 `historyItems` prop + `HistoryItem` 类型导出 + NPopover placement="bottom-start" trigger="manual" + onFocus / onBlur / onHistoryClick + scss `__history` / `__history-item` / `__history-host` / `__history-time`
-- `frontend/src/views/SimpleView.vue` — 接入 useCrawlStore；runCrawl 成功 / 失败路径调用 crawlStore.addTask；空状态条件分支（n-empty v-if history.length===0）/ HistoryCard v-for；TaskDetailDrawer v-model:show；删除 → 内联 toast undo + 5 秒计时器；openDetail 调用 crawlStore.setActiveTask；样式 `__undo-toast` / `__undo-action` + fade transition
+- `frontend/src/components/SmartURLInput.vue` — 新增 `historyItems` prop + `HistoryItem` 类型导出 + NPopover placement="bottom-start" trigger="manual" + onFocus / onBlur / onHistoryClick（B8：focusInput → setShow(false) 顺序确保 popover 关闭）+ scss `__history` / `__history-item` / `__history-host` / `__history-time`
+- `frontend/src/views/SimpleView.vue` — 接入 useCrawlStore（B9 单源化：移除本地 `activeTaskId` ref，直接 `crawlStore.activeTask`）；runCrawl 成功 / 失败路径调用 crawlStore.addTask；`onMounted` 启动 `crawlStore.startTick()` + `onBeforeUnmount` 调用 `stopTick()`（B2）；HistoryCard / TaskDetailDrawer `:now="crawlStore.nowTimestamp"`；删除改 `pendingUndos: Array<{task, index, timer}>` 队列（B4）+ `splice(originalIndex, 0, task)` 恢复原位置（B3）；`onExport()` 移除 `_id` 参数（B7）
 - `frontend/tests/setup.ts` — beforeEach afterEach crypto.randomUUID stub
 - `frontend/tests/components/SimpleView.test.ts` — 4 个新增测试（爬取完成历史卡片出现 / 查看打开抽屉 / 删除显示撤销通知 / 撤销恢复条目）+ 撤销测试改用 `.simple-view__undo-action` 按钮（非 notification link）
+- `frontend/vitest.config.ts` — 解除禁令第 4 项裁决下，include 数组追加 `'tests/stores/**/*.test.ts'` 与 `'tests/composables/**/*.test.ts'`（Decision-needed 修复）
+- `frontend/tests/stores/crawl.test.ts` + `frontend/tests/stores/ui.test.ts` — 改用 `createPinia() + pinia.use(piniaPluginPersistedstate) + createApp({}).use(pinia)` 顺序让 plugin 真正注册到 `_p` 数组；persist 测试用 `await new Promise(r => setTimeout(r, 10))` 让 macrotask flush
 
 ### Change Log
 
@@ -600,3 +652,11 @@ Claude Sonnet 4.6 (claude-sonnet-4-6) via Claude Code CLI BMAD dev-story workflo
 - 2026-08-08 18:00 - 测试 stub name 调研：按内部组件名（Drawer / Popover）stub 解决 teleport 渲染问题
 - 2026-08-09 21:52 - 最终 vitest 运行：81/81 通过，10 个测试文件全绿；覆盖率达标
 - 2026-08-09 21:55 - Story 1-3 状态改为 `review`，sprint-status.yaml 同步
+- 2026-08-10 07:35 - Review Round 1 完成 9 patches（B1/B5/B6/B10/B12a/B12b/A2/A9/A10）+ Decision-needed 提出禁令解除请求；vitest 97/97 绿
+- 2026-08-10 07:50 - Review Round 2 完成 10 patches（B2/B3/B4/B7/B8/B9/A1/A3/A5/A6）：新增 `useStatusTag` composable 共享 hex 调色板与 spin keyframes；crawl store 加 `nowTimestamp` + `startTick`/`stopTick` + SimpleView `onMounted/onBeforeUnmount` 接入 30s 全局 tick；HistoryCard + TaskDetailDrawer 改 `:now` prop 注入；SimpleView 移除本地 `activeTaskId` 改走 `crawlStore.activeTask` 单源；`pendingUndos` 数组队列 + `splice(originalIndex, 0, task)` 恢复原位置；`onExport` 移除 `_id` 参数；SmartURLInput `onHistoryClick` 重排 `focusInput → setShow(false)` 顺序修 popover 关闭 bug；TaskDetailDrawer.test.ts 补第 4 个 `update:show` 测试
+- 2026-08-10 07:52 - vitest 最终运行：98/98 通过，13 个测试文件全绿（含 stores/composables/spec 之前 phantom 的 3 个文件经 vitest.config.ts include 修复后纳入）
+- 2026-08-10 07:55 - Story 1-3 状态保持 `review`，等待用户决定是否再启 Round 3 code-review 或转 `done`
+- 2026-08-10 15:30 - Review Round 3 对抗式审查完成（Blind Hunter 20 + Edge Case Hunter 14 + Acceptance Auditor 4 = 38 raw → 3 decision / 17 patch / 2 defer / 4 dismiss）；3 项 decision-needed 用户全部裁决 (a)：D1 引用计数 refcount、D2 相邻 ID 重定位、D3 onUnmount restoreAll；3 项 decision 转入 patch 后总计 20 项 patch（R3-P1 ~ R3-P20）
+- 2026-08-10 15:45 - Review Round 3 全 20 项 patch 批量应用完成：useStatusTag.ts 移除 `computed` 包装 + `StatusTagType`/`type` 字段 + 浅克隆 color 对象（P1/P2/P3）；crawl.ts 加 `computed` getter 封装 nowTimestamp + `activeTickers` refcount + `restoreTask(task, neighborId)` action + startTick 即时刷新（P5/P6/P12/P18/P19 辅助）；HistoryCard.vue + TaskDetailDrawer.vue `now` prop 改必需（P4）；SmartURLInput.vue onHistoryClick `try/finally` 包裹（P13）；SimpleView.vue PendingUndo.neighborId 重构 + onBeforeUnmount restoreAll 循环（P6 调用方/P19/P20/D3）；crawl.test.ts 加 waitForPersist 轮询 + afterEach app.unmount + 5 个新测试覆盖 P7/P14/P15 与 restoreTask 三态（P9/P10/P14/P15/P7 验证）；ui.test.ts 同步 waitForPersist + afterEach 模式（P9/P10）；TaskDetailDrawer.test.ts Drawer stub 加 `props: { show: Boolean }` + 补 prop-in 断言（P8）；新增 useStatusTag.test.ts 6 个单元测试覆盖 PALETTE 4 状态 + fallback + 克隆保护（P11）；SimpleView.test.ts 加 afterEach(stopTick) + 撤销恢复位置断言（P14/P15）；Story file Status: `in-progress` → `review`（P16）；AC12 文案更新移除 clearHistory、新增 useStatusTag.test.ts 与位置断言覆盖（P17）
+- 2026-08-10 15:45 - vitest 最终运行：109/109 通过，14 个测试文件全绿（新增 useStatusTag.test.ts +6 测试 + crawl.test.ts +5 测试）
+- 2026-08-10 15:45 - Story 1-3 状态保持 `review`，等待用户决定是否再启 Round 4 code-review 或转 `done`

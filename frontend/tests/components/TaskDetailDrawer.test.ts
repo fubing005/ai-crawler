@@ -27,7 +27,7 @@ function mountDrawer(show: boolean, record: CrawlTaskRecord | null) {
         NIcon: true,
         NProgress: true,
         NEllipsis: { template: '<div><slot /></div>' },
-        Drawer: { name: 'Drawer', template: '<div><slot /></div>' },
+        Drawer: { name: 'Drawer', props: { show: Boolean }, template: '<div><slot /></div>' },
         DrawerContent: {
           name: 'DrawerContent',
           template: '<div><slot name="title" /><slot /><slot name="footer" /></div>'
@@ -60,5 +60,17 @@ describe('TaskDetailDrawer.vue', () => {
     const exportBtn = wrapper.findAll('button').find((b) => b.text().includes('导出数据'));
     expect(exportBtn).toBeTruthy();
     expect(exportBtn!.attributes('disabled')).toBeDefined();
+  });
+
+  it('forwards update:show=false from NDrawer to parent emit', async () => {
+    const wrapper = mountDrawer(true, makeRecord());
+    const drawer = wrapper.findComponent({ name: 'Drawer' });
+    expect(drawer.exists()).toBe(true);
+    expect(drawer.props('show')).toBe(true);
+    drawer.vm.$emit('update:show', false);
+    await wrapper.vm.$nextTick();
+    const events = wrapper.emitted('update:show');
+    expect(events).toBeTruthy();
+    expect(events![0]).toEqual([false]);
   });
 });

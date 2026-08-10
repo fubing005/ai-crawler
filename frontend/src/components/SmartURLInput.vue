@@ -218,9 +218,12 @@ function onHistoryClick(value: string) {
   url.value = value;
   emit('update:modelValue', value);
   void nextTick(() => {
-    syncStatus(value);
-    showHistory.value = false;
-    focusInput();
+    try {
+      syncStatus(value);
+      focusInput();
+    } finally {
+      showHistory.value = false;
+    }
   });
 }
 

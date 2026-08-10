@@ -50,8 +50,9 @@
             v-for="record in crawlStore.history"
             :key="record.id"
             :record="record"
+            :now="crawlStore.nowTimestamp"
             @view="openDetail(record.id)"
-            @export="onExport(record.id)"
+            @export="onExport"
             @delete="onDelete(record.id)"
           />
         </div>
@@ -84,14 +85,15 @@
 
     <TaskDetailDrawer
       v-model:show="drawerShow"
-      :record="activeTaskRecord"
+      :record="crawlStore.activeTask"
+      :now="crawlStore.nowTimestamp"
       @export="onExport"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onBeforeUnmount, nextTick } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import { NEmpty, NButton } from 'naive-ui';
 import SmartURLInput from '@/components/SmartURLInput.vue';
 import ViewSwitcher from '@/components/ViewSwitcher.vue';
@@ -106,6 +108,12 @@ import type { CrawlTaskRecord } from '@/types/crawl';
 
 type State = 'idle' | 'analyzing' | 'extracting' | 'completed' | 'failed';
 
+interface PendingUndo {
+  task: CrawlTaskRecord;
+  neighborId: string | null;
+  timer: number;
+}
+
 const uiStore = useUiStore();
 const crawlStore = useCrawlStore();
 
@@ -119,11 +127,8 @@ const bodyRef = ref<HTMLElement | null>(null);
 const examples = mockExamples;
 
 const drawerShow = ref(false);
-const activeTaskId = ref<string | null>(null);
-
-let undoTimer: number | null = null;
-let pendingUndo: CrawlTaskRecord | null = null;
-const undoToastShow = ref(false);
+const pendingUndos = ref<PendingUndo[]>([]);
+const undoToastShow = computed(() => pendingUndos.value.length > 0);
 
 const crawlHistoryItems = computed(() => {
   const seen = new Set<string>();
@@ -136,10 +141,6 @@ const crawlHistoryItems = computed(() => {
   }
   return result;
 });
-
-const activeTaskRecord = computed<CrawlTaskRecord | null>(() =>
-  activeTaskId.value ? crawlStore.getTaskById(activeTaskId.value) : null
-);
 
 let abortController: AbortController | null = null;
 
@@ -259,44 +260,47 @@ function onViewChange(view: ViewPreference) {
 }
 
 function openDetail(id: string) {
-  activeTaskId.value = id;
   crawlStore.setActiveTask(id);
   drawerShow.value = true;
 }
 
-function onExport(_id: string): void {
-  // Phase 1 placeholder — export disabled in drawer/HCard; kept to satisfy emit wiring.
+function onExport(): void {
+  // Phase 1 placeholder — export disabled in drawer/HistoryCard; kept to satisfy emit wiring.
+  // Drawer export emit is no-arg; activeTask id would be read from crawlStore.activeTask?.id if needed.
 }
 
 function onDelete(id: string) {
-  const removed = crawlStore.getTaskById(id);
-  if (!removed) return;
+  const idx = crawlStore.history.findIndex((t) => t.id === id);
+  if (idx === -1) return;
+  const removed = crawlStore.history[idx];
+  const after = crawlStore.history[idx + 1];
+  const neighborId = after ? after.id : null;
   crawlStore.removeTask(id);
-  pendingUndo = removed;
-  if (undoTimer) clearTimeout(undoTimer);
-  undoToastShow.value = true;
-  undoTimer = window.setTimeout(() => {
-    pendingUndo = null;
-    undoTimer = null;
-    undoToastShow.value = false;
+  const timer = window.setTimeout(() => {
+    pendingUndos.value = pendingUndos.value.filter((p) => p.timer !== timer);
   }, 5000);
+  pendingUndos.value.push({ task: removed, neighborId, timer });
 }
 
 function undoDelete() {
-  if (undoTimer) {
-    clearTimeout(undoTimer);
-    undoTimer = null;
-  }
-  if (pendingUndo) {
-    crawlStore.addTask(pendingUndo);
-    pendingUndo = null;
-  }
-  undoToastShow.value = false;
+  const last = pendingUndos.value.pop();
+  if (!last) return;
+  clearTimeout(last.timer);
+  crawlStore.restoreTask(last.task, last.neighborId);
 }
+
+onMounted(() => {
+  crawlStore.startTick();
+});
 
 onBeforeUnmount(() => {
   abortController?.abort();
-  if (undoTimer) clearTimeout(undoTimer);
+  crawlStore.stopTick();
+  for (const p of pendingUndos.value) {
+    clearTimeout(p.timer);
+    crawlStore.restoreTask(p.task, p.neighborId);
+  }
+  pendingUndos.value = [];
 });
 </script>
 

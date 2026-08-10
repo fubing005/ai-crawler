@@ -6,16 +6,18 @@
     @keydown.enter.prevent="emit('view')"
   >
     <div class="history-card__status">
-      <n-tag :type="tagType" size="small" round>
+      <n-tag :color="tag.color" size="small" round>
         <template #icon>
-          <n-icon :component="tagIcon" />
+          <n-icon :component="tag.icon" :class="{ 'history-card__icon--spin': tag.spinning }" />
         </template>
-        {{ tagText }}
+        {{ tag.text }}
       </n-tag>
     </div>
 
     <div class="history-card__body">
-      <h3 class="history-card__title" :title="title">{{ title }}</h3>
+      <h3 class="history-card__title">
+        <n-ellipsis :line-clamp="1" :tooltip="{ width: 'trigger' }">{{ title }}</n-ellipsis>
+      </h3>
       <p class="history-card__time" :title="absoluteTime">{{ relativeTime }}</p>
       <p class="history-card__count">{{ countText }}</p>
     </div>
@@ -42,14 +44,15 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { NTag, NIcon, NButton } from 'naive-ui';
-import { CheckmarkCircle, AlertCircle, Reload } from '@vicons/ionicons5';
+import { NTag, NIcon, NButton, NEllipsis } from 'naive-ui';
 import { formatRelativeTime, formatAbsoluteTime } from '@/composables/useRelativeTime';
+import { useStatusTag } from '@/composables/useStatusTag';
 import type { CrawlTaskRecord } from '@/types/crawl';
 
 const props = withDefaults(defineProps<{
   record: CrawlTaskRecord;
   exportDisabled?: boolean;
+  now: number;
 }>(), {
   exportDisabled: true
 });
@@ -60,32 +63,7 @@ const emit = defineEmits<{
   delete: [];
 }>();
 
-const tagType = computed(() => {
-  switch (props.record.status) {
-    case 'completed': return 'success' as const;
-    case 'failed': return 'error' as const;
-    case 'running': return 'info' as const;
-    default: return 'default' as const;
-  }
-});
-
-const tagIcon = computed(() => {
-  switch (props.record.status) {
-    case 'completed': return CheckmarkCircle;
-    case 'failed': return AlertCircle;
-    case 'running': return Reload;
-    default: return CheckmarkCircle;
-  }
-});
-
-const tagText = computed(() => {
-  switch (props.record.status) {
-    case 'completed': return '已完成';
-    case 'failed': return '失败';
-    case 'running': return '进行中';
-    default: return '未知';
-  }
-});
+const tag = computed(() => useStatusTag(props.record.status));
 
 function deriveTitle(record: CrawlTaskRecord): string {
   if (record.pageTitle && record.pageTitle.trim().length > 0) {
@@ -100,7 +78,7 @@ function deriveTitle(record: CrawlTaskRecord): string {
 
 const title = computed(() => deriveTitle(props.record));
 
-const relativeTime = computed(() => formatRelativeTime(props.record.completedAt));
+const relativeTime = computed(() => formatRelativeTime(props.record.completedAt, props.now));
 const absoluteTime = computed(() => formatAbsoluteTime(props.record.completedAt));
 
 const countText = computed(() =>
@@ -108,7 +86,7 @@ const countText = computed(() =>
 );
 
 const ariaLabel = computed(() =>
-  `${title.value} - 状态：${tagText.value} - ${relativeTime.value} - ${countText.value}`
+  `${title.value} - 状态：${tag.value.text} - ${relativeTime.value} - ${countText.value}`
 );
 </script>
 
@@ -141,9 +119,6 @@ const ariaLabel = computed(() =>
   font-size: 14px;
   font-weight: 600;
   color: #1F2937;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 .history-card__time {
   margin: 0;
@@ -164,5 +139,12 @@ const ariaLabel = computed(() =>
 .history-card:focus-visible {
   outline: 2px solid #3B82F6;
   outline-offset: 2px;
+}
+.history-card__icon--spin {
+  animation: history-card-spin 1s linear infinite;
+}
+@keyframes history-card-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 </style>

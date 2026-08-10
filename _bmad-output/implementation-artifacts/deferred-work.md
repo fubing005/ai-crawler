@@ -1,5 +1,10 @@
 # Deferred Work
 
+## Deferred from: code review of 1-3-task-management-history (2026-08-10 — Round 3)
+
+- SmartURLInput B8 修复依赖 Vue 微任务 batch 顺序 — `showHistory=false` 必须放在 nextTick callback 末位以胜出 onFocus→`showHistory=true` 竞争；无 proactive test guard，Vue scheduler 若变更行为则回归 [frontend/src/components/SmartURLInput.vue:217-225] — deferred: 当前工作但脆弱保留，可在 Vue 3.5+ 升级或出现回归时补 `SmartURLInput.history-close.test.ts`
+- Naive UI Drawer stub 测试使用内部组件名 `Drawer`（非 import 别名 `NDrawer`） — Naive UI 2.39+ 若 rename 内部名则 TaskDetailDrawer 测试 `findComponent({ name: 'Drawer' })` 静默断裂 [frontend/tests/components/TaskDetailDrawer.test.ts:651-656] — deferred: 框架版本耦合暂可容忍，2.39 升级时复核
+
 ## Deferred from: code review of 1-2-simple-view-url-input (2026-08-07 — second pass)
 
 - WS 订阅先于 crawl() 任务创建 — `runCrawl` 顺序 `await getCrawlProgress('mock-task')` 后再 `await crawl(...)`，真实后端中 WS 连接到尚未创建的 task_id [frontend/src/views/SimpleView.vue:97-118] — deferred: 真实 WS 流程由 Epic 2 重排为 `crawl → 取 task_id → getCrawlProgress(task_id)`

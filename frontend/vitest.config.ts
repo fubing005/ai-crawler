@@ -17,7 +17,9 @@ export default defineConfig({
     environment: 'jsdom',
     include: [
       'tests/unit/**/*.test.ts',
-      'tests/components/**/*.test.ts'
+      'tests/components/**/*.test.ts',
+      'tests/stores/**/*.test.ts',
+      'tests/composables/**/*.test.ts'
     ],
     coverage: {
       provider: 'v8',

@@ -9,11 +9,14 @@
       <div v-if="record" class="task-detail">
         <header class="task-detail__header">
           <h2 class="task-detail__title">{{ title }}</h2>
-          <n-tag :type="tagType" size="small" round>
+          <n-tag :color="tag.color" size="small" round>
             <template #icon>
-              <n-icon :component="tagIcon" />
+              <n-icon
+                :component="tag.icon"
+                :class="{ 'task-detail__icon--spin': tag.spinning }"
+              />
             </template>
-            {{ tagText }}
+            {{ tag.text }}
           </n-tag>
         </header>
 
@@ -99,13 +102,14 @@ import {
   NEmpty,
   NButton
 } from 'naive-ui';
-import { CheckmarkCircle, AlertCircle, Reload } from '@vicons/ionicons5';
 import { formatRelativeTime, formatAbsoluteTime } from '@/composables/useRelativeTime';
+import { useStatusTag } from '@/composables/useStatusTag';
 import type { CrawlTaskRecord } from '@/types/crawl';
 
 const props = defineProps<{
   show: boolean;
   record: CrawlTaskRecord | null;
+  now: number;
 }>();
 
 const emit = defineEmits<{
@@ -113,32 +117,7 @@ const emit = defineEmits<{
   export: [];
 }>();
 
-const tagType = computed(() => {
-  switch (props.record?.status) {
-    case 'completed': return 'success' as const;
-    case 'failed': return 'error' as const;
-    case 'running': return 'info' as const;
-    default: return 'default' as const;
-  }
-});
-
-const tagIcon = computed(() => {
-  switch (props.record?.status) {
-    case 'completed': return CheckmarkCircle;
-    case 'failed': return AlertCircle;
-    case 'running': return Reload;
-    default: return CheckmarkCircle;
-  }
-});
-
-const tagText = computed(() => {
-  switch (props.record?.status) {
-    case 'completed': return '已完成';
-    case 'failed': return '失败';
-    case 'running': return '进行中';
-    default: return '未知';
-  }
-});
+const tag = computed(() => useStatusTag(props.record?.status));
 
 const title = computed(() => {
   const r = props.record;
@@ -148,7 +127,7 @@ const title = computed(() => {
 });
 
 const relativeTime = computed(() =>
-  props.record ? formatRelativeTime(props.record.completedAt) : ''
+  props.record ? formatRelativeTime(props.record.completedAt, props.now) : ''
 );
 const absoluteTime = computed(() =>
   props.record ? formatAbsoluteTime(props.record.completedAt) : ''
@@ -240,5 +219,12 @@ const absoluteTime = computed(() =>
   margin: 0;
   font-size: 13px;
   color: #6B7280;
+}
+.task-detail__icon--spin {
+  animation: task-detail-spin 1s linear infinite;
+}
+@keyframes task-detail-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 </style>
