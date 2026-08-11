@@ -13,7 +13,9 @@ describe('SimpleView.vue', () => {
   });
 
   afterEach(() => {
-    try { useCrawlStore().stopTick(); } catch { /* store not initialized */ }
+    try { useCrawlStore().stopTick(); } catch (e) {
+      if (!/no active pinia/.test(String(e))) throw e;
+    }
   });
 
   it('renders placeholder empty state', () => {
@@ -300,6 +302,64 @@ describe('SimpleView.vue', () => {
     await undoBtn.trigger('click');
     expect(store.history.length).toBe(initialCount);
     expect(store.history[0]?.id).toBe(removedId);
+    vi.useRealTimers();
+  });
+
+  it('撤销删除恢复条目到中间位置（非顶部）', async () => {
+    vi.useFakeTimers();
+    const wrapper = mount(SimpleView, {
+      global: {
+        plugins: [createTestingPinia({ createSpy: vi.fn, stubActions: false })],
+        stubs: { NIcon: true, NProgress: true, NEllipsis: true },
+        components: { NNotificationProvider, NMessageProvider }
+      }
+    });
+    const store = (await import('@/stores/crawl')).useCrawlStore();
+    // Seed two extra records so the deleted one is at the middle slot.
+    store.addTask({
+      id: 'seed-1',
+      url: 'https://example.com/seed1',
+      pageTitle: 'seed1',
+      extractedCount: 0,
+      completedAt: Date.now(),
+      status: 'completed',
+      fields: []
+    });
+    store.addTask({
+      id: 'seed-2',
+      url: 'https://example.com/seed2',
+      pageTitle: 'seed2',
+      extractedCount: 0,
+      completedAt: Date.now(),
+      status: 'completed',
+      fields: []
+    });
+    const input = wrapper.find('input');
+    await input.setValue('https://example.com/product');
+    const btn = wrapper.findAll('button').find((b) => b.text().includes('开始爬取'));
+    await btn?.trigger('click');
+    await vi.advanceTimersByTimeAsync(6500);
+    // Layout: [newest, seed-2, seed-1] — the new crawl is at index 0.
+    const initialCount = store.history.length;
+    expect(initialCount).toBeGreaterThanOrEqual(3);
+    // Delete seed-2 which sits at index 1 (middle). Its captured neighbor is seed-1 (idx 2).
+    const removedId = 'seed-2';
+    const expectedNeighbor = 'seed-1';
+    const deleteButtons = wrapper.findAll('button').filter((b) => b.text().includes('删除'));
+    // Find the delete button whose parent card corresponds to seed-2.
+    // Each HistoryCard has a 删除 button in order; store order is [newest, seed-2, seed-1].
+    // Middle button corresponds to seed-2.
+    await deleteButtons[1].trigger('click');
+    expect(store.history.map((r) => r.id)).not.toContain(removedId);
+    const undoBtn = wrapper.find('.simple-view__undo-action');
+    expect(undoBtn.exists()).toBe(true);
+    await undoBtn.trigger('click');
+    expect(store.history.map((r) => r.id)).toContain(removedId);
+    // seed-2 should be restored before expectedNeighbor (the originally-following record);
+    // i.e., at index 1, between newest (index 0) and seed-1 (index 2).
+    const restoredIdx = store.history.findIndex((r) => r.id === removedId);
+    expect(restoredIdx).toBe(1);
+    expect(store.history[restoredIdx + 1]?.id).toBe(expectedNeighbor);
     vi.useRealTimers();
   });
 });

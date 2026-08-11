@@ -38,6 +38,13 @@ export const useCrawlStore = defineStore(
       activeTask.value = getTaskById(id);
     }
 
+    function getNeighborId(id: string): string | null {
+      const idx = history.value.findIndex((t) => t.id === id);
+      if (idx === -1) return null;
+      const after = history.value[idx + 1];
+      return after ? after.id : null;
+    }
+
     function restoreTask(task: CrawlTaskRecord, neighborId: string | null): void {
       if (neighborId === null) {
         history.value.push(task);
@@ -53,7 +60,7 @@ export const useCrawlStore = defineStore(
 
     function startTick(): void {
       activeTickers++;
-      if (tickTimer === null) {
+      if (activeTickers === 1) {
         nowTimestamp.value = Date.now();
         tickTimer = setInterval(() => {
           nowTimestamp.value = Date.now();
@@ -69,6 +76,16 @@ export const useCrawlStore = defineStore(
       }
     }
 
+    if (import.meta.hot) {
+      import.meta.hot.dispose(() => {
+        if (tickTimer) {
+          clearInterval(tickTimer);
+          tickTimer = null;
+        }
+        activeTickers = 0;
+      });
+    }
+
     return {
       history,
       activeTasks,
@@ -79,6 +96,7 @@ export const useCrawlStore = defineStore(
       getTaskById,
       setActiveTask,
       restoreTask,
+      getNeighborId,
       startTick,
       stopTick
     };

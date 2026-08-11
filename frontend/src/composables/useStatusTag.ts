@@ -10,12 +10,7 @@ export interface StatusTagInfo {
   spinning: boolean;
 }
 
-interface StatusTagEntry {
-  color: { color: string; borderColor: string; textColor: string };
-  icon: Component;
-  text: string;
-  spinning: boolean;
-}
+type StatusTagEntry = StatusTagInfo;
 
 const PALETTE: Record<CrawlStatus, StatusTagEntry> = {
   completed: {
@@ -44,6 +39,9 @@ const FALLBACK: StatusTagEntry = {
   text: '未知',
   spinning: false
 };
+
+Object.freeze(PALETTE);
+Object.freeze(FALLBACK);
 
 function cloneEntry(entry: StatusTagEntry): StatusTagInfo {
   return {

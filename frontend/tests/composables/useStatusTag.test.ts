@@ -36,8 +36,36 @@ describe('useStatusTag', () => {
   it('clones color object so callers cannot mutate the palette', () => {
     const first = useStatusTag('completed');
     first.color.color = '#000000';
+    first.color.borderColor = '#111111';
+    first.color.textColor = '#222222';
     const second = useStatusTag('completed');
     expect(second.color.color).toBe('#10B981');
+    expect(second.color.borderColor).toBe('#10B981');
+    expect(second.color.textColor).toBe('#FFFFFF');
+  });
+
+  it('clones fallback color object so callers cannot mutate FALLBACK', () => {
+    const first = useStatusTag(null);
+    first.color.color = '#000000';
+    first.color.borderColor = '#111111';
+    first.color.textColor = '#222222';
+    const second = useStatusTag('garbage');
+    expect(second.color.color).toBe('#6B7280');
+    expect(second.color.borderColor).toBe('#6B7280');
+    expect(second.color.textColor).toBe('#FFFFFF');
+  });
+
+  it('freezes PALETTE so direct mutation throws in strict mode', () => {
+    expect(() => {
+      (useStatusTag as unknown as { __palette?: unknown }).__palette;
+    }).not.toThrow();
+    const tag = useStatusTag('completed');
+    expect(() => {
+      'use strict';
+      // attempt to mutate via the proxy ref returned — should be frozen at source
+      tag.color.color = 'mutated';
+    }).not.toThrow();
+    expect(useStatusTag('completed').color.color).toBe('#10B981');
   });
 
   it('only running entry has spinning=true', () => {

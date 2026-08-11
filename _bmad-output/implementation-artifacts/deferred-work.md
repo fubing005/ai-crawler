@@ -1,5 +1,9 @@
 # Deferred Work
 
+## Deferred from: code review of 1-3-task-management-history (2026-08-10 — Round 4)
+
+- setActiveTask / nowTimestamp 30s tick 触发 pinia-plugin-persistedstate $subscribe 冗余 localStorage 序列化 [frontend/src/stores/crawl.ts] — `pick: ['history']` 限制写入字段，但 $subscribe 仍触发 history 完整序列化。pref concern 非 spec violation。deferred: Phase 2 性能优化阶段处理（可加 `paths` 选项或 shallow 兼容）
+
 ## Deferred from: code review of 1-3-task-management-history (2026-08-10 — Round 3)
 
 - SmartURLInput B8 修复依赖 Vue 微任务 batch 顺序 — `showHistory=false` 必须放在 nextTick callback 末位以胜出 onFocus→`showHistory=true` 竞争；无 proactive test guard，Vue scheduler 若变更行为则回归 [frontend/src/components/SmartURLInput.vue:217-225] — deferred: 当前工作但脆弱保留，可在 Vue 3.5+ 升级或出现回归时补 `SmartURLInput.history-close.test.ts`

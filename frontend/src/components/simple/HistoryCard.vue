@@ -119,6 +119,9 @@ const ariaLabel = computed(() =>
   font-size: 14px;
   font-weight: 600;
   color: #1F2937;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .history-card__time {
   margin: 0;

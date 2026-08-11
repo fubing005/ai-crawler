@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { createApp, type App } from 'vue';
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate';
@@ -19,6 +19,8 @@ function makeRecord(overrides: Partial<CrawlTaskRecord> = {}): CrawlTaskRecord {
 }
 
 async function waitForPersist(key: string, maxMs = 200): Promise<string | null> {
+  const wasFake = vi.getTimerConfig?.() ?? { isFake: false };
+  if (wasFake.isFake) vi.useRealTimers();
   const start = Date.now();
   while (Date.now() - start < maxMs) {
     const raw = localStorage.getItem(key);
@@ -41,6 +43,13 @@ describe('useCrawlStore', () => {
   });
 
   afterEach(() => {
+    try {
+      const s = useCrawlStore();
+      s.stopTick();
+      s.stopTick();
+    } catch (e) {
+      if (!/no active pinia/.test(String(e))) throw e;
+    }
     app?.unmount();
     app = null;
   });
@@ -101,23 +110,44 @@ describe('useCrawlStore', () => {
     expect(store.history.map((r) => r.id)).toEqual(['c', removed.id, 'a']);
   });
 
-  it('restoreTask appends when neighborId is null', () => {
-    const store = useCrawlStore();
-    store.addTask(makeRecord({ id: 'a' }));
-    const removed = store.history[0];
-    store.removeTask(removed.id);
-    store.restoreTask(removed, null);
-    expect(store.history.map((r) => r.id)).toEqual(['a']);
-  });
-
-  it('restoreTask unshifts when neighbor id is missing', () => {
+  it('restoreTask appends to the end when neighborId is null and history is non-empty', () => {
     const store = useCrawlStore();
     store.addTask(makeRecord({ id: 'a' }));
     store.addTask(makeRecord({ id: 'b' }));
+    store.addTask(makeRecord({ id: 'c' }));
+    // Layout after unshift: [c, b, a] — remove 'c' (top) and restore with null neighborId
+    // (which SimpleView uses only when the deleted item was at the END);
+    // restoreTask pushes to the end, NOT unshift to top.
+    const removed = store.history[0];
+    store.removeTask(removed.id);
+    // Before restore: [b, a]
+    store.restoreTask(removed, null);
+    // Push to end: [b, a, c]; unshift would give [c, b, a]
+    expect(store.history.map((r) => r.id)).toEqual(['b', 'a', 'c']);
+  });
+
+  it('restoreTask falls back to unshift when neighbor id is missing (degraded recovery)', () => {
+    const store = useCrawlStore();
+    store.addTask(makeRecord({ id: 'a' }));
+    store.addTask(makeRecord({ id: 'b' }));
+    // Layout: [b, a] — remove 'a' (the last item) and call restoreTask with a ghost neighbor.
+    // Fallback path unshifts to the top.
     const removed = store.history[1];
     store.removeTask(removed.id);
+    // Before restore: [b]
     store.restoreTask(removed, 'ghost-neighbor');
+    // Unshift to top: [a, b]
     expect(store.history.map((r) => r.id)).toEqual(['a', 'b']);
+  });
+
+  it('getNeighborId returns the next record id or null', () => {
+    const store = useCrawlStore();
+    store.addTask(makeRecord({ id: 'a' }));
+    store.addTask(makeRecord({ id: 'b' }));
+    store.addTask(makeRecord({ id: 'c' }));
+    expect(store.getNeighborId('b')).toBe('a');
+    expect(store.getNeighborId('a')).toBeNull();
+    expect(store.getNeighborId('missing')).toBeNull();
   });
 
   it('persist writes history into localStorage under ai-crawler:crawl-history key', async () => {
@@ -130,15 +160,21 @@ describe('useCrawlStore', () => {
     expect(parsed.history[0].id).toBe('persist-1');
   });
 
-  it('startTick/stopTick refcount keeps ticking until last unmount', () => {
+  it('startTick/stopTick refcount keeps ticking until last unmount with fake timers', async () => {
+    vi.useFakeTimers();
     const store = useCrawlStore();
-    const original = Date.now();
+    const before = store.nowTimestamp;
     store.startTick();
     store.startTick();
+    await vi.advanceTimersByTimeAsync(30_000);
+    expect(store.nowTimestamp).toBeGreaterThan(before);
     store.stopTick();
-    const midpoint = store.nowTimestamp;
-    expect(midpoint).toBeGreaterThanOrEqual(original);
+    await vi.advanceTimersByTimeAsync(30_000);
+    expect(store.nowTimestamp).toBeGreaterThan(before);
     store.stopTick();
-    expect(store.stopTick).not.toThrow();
+    const afterStop = store.nowTimestamp;
+    await vi.advanceTimersByTimeAsync(30_000);
+    expect(store.nowTimestamp).toBe(afterStop);
+    vi.useRealTimers();
   });
 });

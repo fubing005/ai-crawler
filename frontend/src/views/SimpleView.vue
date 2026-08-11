@@ -273,8 +273,7 @@ function onDelete(id: string) {
   const idx = crawlStore.history.findIndex((t) => t.id === id);
   if (idx === -1) return;
   const removed = crawlStore.history[idx];
-  const after = crawlStore.history[idx + 1];
-  const neighborId = after ? after.id : null;
+  const neighborId = crawlStore.getNeighborId(id);
   crawlStore.removeTask(id);
   const timer = window.setTimeout(() => {
     pendingUndos.value = pendingUndos.value.filter((p) => p.timer !== timer);
@@ -296,9 +295,13 @@ onMounted(() => {
 onBeforeUnmount(() => {
   abortController?.abort();
   crawlStore.stopTick();
-  for (const p of pendingUndos.value) {
-    clearTimeout(p.timer);
-    crawlStore.restoreTask(p.task, p.neighborId);
+  for (const p of [...pendingUndos.value].reverse()) {
+    try {
+      clearTimeout(p.timer);
+      crawlStore.restoreTask(p.task, p.neighborId);
+    } catch (e) {
+      console.error('restoreTask failed during unmount', e);
+    }
   }
   pendingUndos.value = [];
 });

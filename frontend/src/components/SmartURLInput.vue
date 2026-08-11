@@ -221,6 +221,8 @@ function onHistoryClick(value: string) {
     try {
       syncStatus(value);
       focusInput();
+    } catch (e) {
+      console.warn('onHistoryClick error', e);
     } finally {
       showHistory.value = false;
     }
