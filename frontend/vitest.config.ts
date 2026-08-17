@@ -15,6 +15,7 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
+    setupFiles: ['tests/setup.ts', 'tests/setup-notification.ts'],
     include: [
       'tests/unit/**/*.test.ts',
       'tests/components/**/*.test.ts',

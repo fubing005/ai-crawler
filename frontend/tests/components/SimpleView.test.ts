@@ -1,15 +1,24 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
-import { nextTick } from 'vue';
+import { nextTick, defineComponent } from 'vue';
 import SimpleView from '@/views/SimpleView.vue';
 import { createTestingPinia } from '@pinia/testing';
 import { NNotificationProvider, NMessageProvider } from 'naive-ui';
 import * as analyzeApi from '@/api/analyze';
 import { useCrawlStore } from '@/stores/crawl';
+import { mockNotification } from '../setup-notification';
+
+const Host = defineComponent({
+  components: { SimpleView, NNotificationProvider, NMessageProvider },
+  template: `<NMessageProvider><NNotificationProvider><SimpleView /></NNotificationProvider></NMessageProvider>`
+});
 
 describe('SimpleView.vue', () => {
   beforeEach(() => {
     localStorage.clear();
+    mockNotification.mockClear();
+    mockNotification.permission = 'default';
+    mockNotification.requestPermission = vi.fn().mockResolvedValue('granted');
   });
 
   afterEach(() => {
@@ -19,7 +28,7 @@ describe('SimpleView.vue', () => {
   });
 
   it('renders placeholder empty state', () => {
-    const wrapper = mount(SimpleView, {
+    const wrapper = mount(Host, {
       global: { plugins: [createTestingPinia({ createSpy: vi.fn })] }
     });
     expect(wrapper.text()).toContain('简洁视图');
@@ -27,7 +36,7 @@ describe('SimpleView.vue', () => {
   });
 
   it('shows error hint on empty url + 开始爬取', async () => {
-    const wrapper = mount(SimpleView, {
+    const wrapper = mount(Host, {
       global: { plugins: [createTestingPinia({ createSpy: vi.fn })] }
     });
     const btn = wrapper.findAll('button').find((b) => b.text().includes('开始爬取'));
@@ -36,7 +45,7 @@ describe('SimpleView.vue', () => {
   });
 
   it('shows invalid url hint on bad URL', async () => {
-    const wrapper = mount(SimpleView, {
+    const wrapper = mount(Host, {
       global: { plugins: [createTestingPinia({ createSpy: vi.fn })] }
     });
     const input = wrapper.find('input');
@@ -47,14 +56,14 @@ describe('SimpleView.vue', () => {
   });
 
   it('renders example chips from mockExamples', () => {
-    const wrapper = mount(SimpleView, {
+    const wrapper = mount(Host, {
       global: { plugins: [createTestingPinia({ createSpy: vi.fn })] }
     });
     expect(wrapper.text()).toContain('https://example.com/product');
   });
 
   it('clicking example chip fills url input', async () => {
-    const wrapper = mount(SimpleView, {
+    const wrapper = mount(Host, {
       global: { plugins: [createTestingPinia({ createSpy: vi.fn })] }
     });
     const chip = wrapper.findAll('.smart-url-input__chip').find((el) => el.text().includes('example.com'));
@@ -64,7 +73,7 @@ describe('SimpleView.vue', () => {
   });
 
   it('disables 开始爬取 button while loading', async () => {
-    const wrapper = mount(SimpleView, {
+    const wrapper = mount(Host, {
       global: { plugins: [createTestingPinia({ createSpy: vi.fn })] }
     });
     const input = wrapper.find('input');
@@ -76,7 +85,7 @@ describe('SimpleView.vue', () => {
 
   it('progress panel shows AI stage labels on crawl', async () => {
     vi.useFakeTimers();
-    const wrapper = mount(SimpleView, {
+    const wrapper = mount(Host, {
       global: { plugins: [createTestingPinia({ createSpy: vi.fn })] }
     });
     const input = wrapper.find('input');
@@ -94,7 +103,7 @@ describe('SimpleView.vue', () => {
     const progressSpy = vi.spyOn(analyzeApi, 'getCrawlProgress').mockRejectedValue(new Error('mock fail'));
     const crawlSpy = vi.spyOn(analyzeApi, 'crawl').mockRejectedValue(new Error('mock fail'));
     vi.useFakeTimers();
-    const wrapper = mount(SimpleView, {
+    const wrapper = mount(Host, {
       global: { plugins: [createTestingPinia({ createSpy: vi.fn })] }
     });
     const input = wrapper.find('input');
@@ -111,7 +120,7 @@ describe('SimpleView.vue', () => {
   });
 
   it('Ctrl+Enter submits valid url', async () => {
-    const wrapper = mount(SimpleView, {
+    const wrapper = mount(Host, {
       global: { plugins: [createTestingPinia({ createSpy: vi.fn })] }
     });
     const input = wrapper.find('input');
@@ -124,14 +133,14 @@ describe('SimpleView.vue', () => {
     const pinia = createTestingPinia({ createSpy: vi.fn });
     const store = (await import('@/stores/ui')).useUiStore();
     store.viewPreference = 'dashboard';
-    const wrapper = mount(SimpleView, { global: { plugins: [pinia] } });
+    const wrapper = mount(Host, { global: { plugins: [pinia] } });
     const buttons = wrapper.findAll('button').filter((b) => b.text().includes('简洁视图'));
     await buttons[0].trigger('click');
     expect(store.setViewPreference).toHaveBeenCalledWith('simple');
   });
 
   it('shows 立即开始爬取 button in empty history area', () => {
-    const wrapper = mount(SimpleView, {
+    const wrapper = mount(Host, {
       global: { plugins: [createTestingPinia({ createSpy: vi.fn })] }
     });
     expect(wrapper.text()).toContain('还没有爬取历史');
@@ -143,7 +152,7 @@ describe('SimpleView.vue', () => {
     const focusSpy = vi.fn();
     (Element.prototype as Partial<Element> as { scrollTo?: unknown }).scrollTo = scrollToSpy;
     (HTMLInputElement.prototype as Partial<HTMLInputElement> as { focus?: unknown }).focus = focusSpy;
-    const wrapper = mount(SimpleView, {
+    const wrapper = mount(Host, {
       global: { plugins: [createTestingPinia({ createSpy: vi.fn })] }
     });
     const btn = wrapper.findAll('button').find((b) => b.text().includes('立即开始爬取'));
@@ -158,7 +167,7 @@ describe('SimpleView.vue', () => {
     const progressSpy = vi.spyOn(analyzeApi, 'getCrawlProgress').mockRejectedValue(new Error('mock fail'));
     const crawlSpy = vi.spyOn(analyzeApi, 'crawl').mockRejectedValue(new Error('mock fail'));
     vi.useFakeTimers();
-    const wrapper = mount(SimpleView, {
+    const wrapper = mount(Host, {
       global: { plugins: [createTestingPinia({ createSpy: vi.fn })] }
     });
     const input = wrapper.find('input');
@@ -182,7 +191,7 @@ describe('SimpleView.vue', () => {
     const progressSpy = vi.spyOn(analyzeApi, 'getCrawlProgress').mockRejectedValue(new Error('mock fail'));
     const crawlSpy = vi.spyOn(analyzeApi, 'crawl').mockRejectedValue(new Error('mock fail'));
     vi.useFakeTimers();
-    const wrapper = mount(SimpleView, {
+    const wrapper = mount(Host, {
       global: { plugins: [createTestingPinia({ createSpy: vi.fn })] }
     });
     const input = wrapper.find('input');
@@ -202,7 +211,7 @@ describe('SimpleView.vue', () => {
   });
 
   it('rejects javascript: protocol url with invalid format hint', async () => {
-    const wrapper = mount(SimpleView, {
+    const wrapper = mount(Host, {
       global: { plugins: [createTestingPinia({ createSpy: vi.fn })] }
     });
     const input = wrapper.find('input');
@@ -214,7 +223,7 @@ describe('SimpleView.vue', () => {
 
   it('爬取完成后历史卡片出现（store 历史长度增长）', async () => {
     vi.useFakeTimers();
-    const wrapper = mount(SimpleView, {
+    const wrapper = mount(Host, {
       global: {
         plugins: [createTestingPinia({ createSpy: vi.fn, stubActions: false })],
         stubs: { NIcon: true }
@@ -233,7 +242,7 @@ describe('SimpleView.vue', () => {
 
   it('点击 HistoryCard 查看按钮打开任务详情抽屉', async () => {
     vi.useFakeTimers();
-    const wrapper = mount(SimpleView, {
+    const wrapper = mount(Host, {
       global: {
         plugins: [createTestingPinia({ createSpy: vi.fn, stubActions: false })],
         stubs: { NIcon: true, NProgress: true, NEllipsis: true, NDrawer: true, NDrawerContent: true }
@@ -255,7 +264,7 @@ describe('SimpleView.vue', () => {
 
   it('点击删除按钮移除条目并显示撤销通知', async () => {
     vi.useFakeTimers();
-    const wrapper = mount(SimpleView, {
+    const wrapper = mount(Host, {
       global: {
         plugins: [createTestingPinia({ createSpy: vi.fn, stubActions: false })],
         stubs: { NIcon: true, NProgress: true, NEllipsis: true },
@@ -279,7 +288,7 @@ describe('SimpleView.vue', () => {
 
   it('撤销删除恢复条目', async () => {
     vi.useFakeTimers();
-    const wrapper = mount(SimpleView, {
+    const wrapper = mount(Host, {
       global: {
         plugins: [createTestingPinia({ createSpy: vi.fn, stubActions: false })],
         stubs: { NIcon: true, NProgress: true, NEllipsis: true },
@@ -307,7 +316,7 @@ describe('SimpleView.vue', () => {
 
   it('撤销删除恢复条目到中间位置（非顶部）', async () => {
     vi.useFakeTimers();
-    const wrapper = mount(SimpleView, {
+    const wrapper = mount(Host, {
       global: {
         plugins: [createTestingPinia({ createSpy: vi.fn, stubActions: false })],
         stubs: { NIcon: true, NProgress: true, NEllipsis: true },
@@ -360,6 +369,141 @@ describe('SimpleView.vue', () => {
     const restoredIdx = store.history.findIndex((r) => r.id === removedId);
     expect(restoredIdx).toBe(1);
     expect(store.history[restoredIdx + 1]?.id).toBe(expectedNeighbor);
+    vi.useRealTimers();
+  });
+
+  it('设置图标按钮点击打开设置抽屉', async () => {
+    const wrapper = mount(Host, {
+      global: {
+        plugins: [createTestingPinia({ createSpy: vi.fn })],
+        stubs: { SettingsDrawer: true }
+      }
+    });
+    const settingsBtn = wrapper.find('button[aria-label="打开设置"]');
+    expect(settingsBtn.exists()).toBe(true);
+    const drawer = wrapper.findComponent({ name: 'SettingsDrawer' });
+    expect(drawer.props('show')).toBe(false);
+    await settingsBtn.trigger('click');
+    await nextTick();
+    expect(drawer.props('show')).toBe(true);
+  });
+
+  it('Ctrl+, 全局快捷键打开设置抽屉', async () => {
+    const wrapper = mount(Host, {
+      global: {
+        plugins: [createTestingPinia({ createSpy: vi.fn })],
+        stubs: { SettingsDrawer: true }
+      }
+    });
+    const drawer = wrapper.findComponent({ name: 'SettingsDrawer' });
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: ',', ctrlKey: true }));
+    await nextTick();
+    expect(drawer.props('show')).toBe(true);
+  });
+
+  it('爬取成功路径触发桌面通知（enabled + onComplete + granted）', async () => {
+    mockNotification.permission = 'granted';
+    vi.useFakeTimers();
+    const wrapper = mount(Host, {
+      global: {
+        plugins: [createTestingPinia({ createSpy: vi.fn, stubActions: false })],
+        stubs: { NIcon: true, NProgress: true, NEllipsis: true }
+      }
+    });
+    const settingsStore = (await import('@/stores/settings')).useSettingsStore();
+    settingsStore.setNotificationPreference({ enabled: true, onComplete: true, onFailure: false });
+    const input = wrapper.find('input');
+    await input.setValue('https://example.com/product');
+    const btn = wrapper.findAll('button').find((b) => b.text().includes('开始爬取'));
+    await btn!.trigger('click');
+    await vi.advanceTimersByTimeAsync(6500);
+    expect(mockNotification).toHaveBeenCalledWith('爬取完成', expect.objectContaining({ tag: expect.any(String) }));
+    vi.useRealTimers();
+  });
+
+  it('爬取失败路径触发桌面通知与应用内错误通知卡片', async () => {
+    mockNotification.permission = 'granted';
+    const analyzeSpy = vi.spyOn(analyzeApi, 'analyze').mockRejectedValue(new Error('mock fail'));
+    const progressSpy = vi.spyOn(analyzeApi, 'getCrawlProgress').mockRejectedValue(new Error('mock fail'));
+    const crawlSpy = vi.spyOn(analyzeApi, 'crawl').mockRejectedValue(new Error('mock fail'));
+    vi.useFakeTimers();
+    const wrapper = mount(Host, {
+      global: {
+        plugins: [createTestingPinia({ createSpy: vi.fn, stubActions: false })],
+        stubs: { NIcon: true, NProgress: true, NEllipsis: true }
+      }
+    });
+    const input = wrapper.find('input');
+    await input.setValue('https://example.com/product');
+    const btn = wrapper.findAll('button').find((b) => b.text().includes('开始爬取'));
+    await btn!.trigger('click');
+    await vi.advanceTimersByTimeAsync(100);
+    await nextTick();
+    expect(mockNotification).toHaveBeenCalledWith('爬取失败', expect.objectContaining({ tag: expect.any(String) }));
+    expect(document.body.textContent).toContain('点击重试或关闭');
+    expect(document.body.textContent).toContain('重试');
+    vi.useRealTimers();
+    analyzeSpy.mockRestore();
+    progressSpy.mockRestore();
+    crawlSpy.mockRestore();
+  });
+
+  it('notificationPreference.enabled=false 时不触发桌面通知', async () => {
+    mockNotification.permission = 'granted';
+    const analyzeSpy = vi.spyOn(analyzeApi, 'analyze').mockRejectedValue(new Error('mock fail'));
+    const progressSpy = vi.spyOn(analyzeApi, 'getCrawlProgress').mockRejectedValue(new Error('mock fail'));
+    const crawlSpy = vi.spyOn(analyzeApi, 'crawl').mockRejectedValue(new Error('mock fail'));
+    vi.useFakeTimers();
+    const wrapper = mount(Host, {
+      global: {
+        plugins: [createTestingPinia({ createSpy: vi.fn, stubActions: false })],
+        stubs: { NIcon: true, NProgress: true, NEllipsis: true }
+      }
+    });
+    const settingsStore = (await import('@/stores/settings')).useSettingsStore();
+    settingsStore.setNotificationPreference({ enabled: false, onComplete: true, onFailure: true });
+    const input = wrapper.find('input');
+    await input.setValue('https://example.com/product');
+    const btn = wrapper.findAll('button').find((b) => b.text().includes('开始爬取'));
+    await btn!.trigger('click');
+    await vi.advanceTimersByTimeAsync(100);
+    await nextTick();
+    expect(mockNotification).not.toHaveBeenCalled();
+    expect(wrapper.text()).not.toContain('点击重试或关闭');
+    vi.useRealTimers();
+    analyzeSpy.mockRestore();
+    progressSpy.mockRestore();
+    crawlSpy.mockRestore();
+  });
+
+  it('桌面通知 onClick 回调打开任务详情抽屉', async () => {
+    mockNotification.permission = 'granted';
+    vi.useFakeTimers();
+    const wrapper = mount(Host, {
+      global: {
+        plugins: [createTestingPinia({ createSpy: vi.fn, stubActions: false })],
+        stubs: { NIcon: true, NProgress: true, NEllipsis: true, NDrawer: true, NDrawerContent: true }
+      }
+    });
+    const settingsStore = (await import('@/stores/settings')).useSettingsStore();
+    settingsStore.setNotificationPreference({ enabled: true, onComplete: true, onFailure: false });
+    const input = wrapper.find('input');
+    await input.setValue('https://example.com/product');
+    const btn = wrapper.findAll('button').find((b) => b.text().includes('开始爬取'));
+    await btn!.trigger('click');
+    await vi.advanceTimersByTimeAsync(6500);
+    const store = (await import('@/stores/crawl')).useCrawlStore();
+    const recordId = store.history[0]?.id;
+    expect(recordId).toBeTruthy();
+    const inst = mockNotification.mock.results[mockNotification.mock.results.length - 1]?.value as
+      | { onclick: null | (() => void) }
+      | undefined;
+    expect(inst?.onclick).toBeTypeOf('function');
+    inst!.onclick!();
+    await nextTick();
+    expect(store.activeTask?.id).toBe(recordId);
+    const detailDrawer = wrapper.findComponent({ name: 'TaskDetailDrawer' });
+    expect(detailDrawer.props('show')).toBe(true);
     vi.useRealTimers();
   });
 });

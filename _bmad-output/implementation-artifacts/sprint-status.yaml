@@ -36,7 +36,9 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-07-30 13:21
-last_updated: 2026-08-10 20:30
+last_updated: 2026-08-17
+# Story 1-4 marked in-progress by dev-story workflow (2026-08-12)
+# Story 1-4 code review complete (7 patches fixed), moved to done (2026-08-17)
 project: vscode_bmad_method_test
 project_key: NOKEY
 tracking_system: file-system
@@ -44,11 +46,11 @@ story_location: "_bmad-output/implementation-artifacts"
 
 development_status:
   # Epic 1: 首次使用引导与快速上手 (4 Stories)
-  epic-1: in-progress
+  epic-1: done
   1-1-desktop-app-install-launch: done
   1-2-simple-view-url-input: done
   1-3-task-management-history: done
-  1-4-interface-settings-notifications: backlog
+  1-4-interface-settings-notifications: done
   epic-1-retrospective: optional
 
   # Epic 2: AI驱动的页面分析与数据提取 (6 Stories)

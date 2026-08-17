@@ -9,11 +9,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { computed, onMounted } from 'vue';
 import { zhCN, darkTheme, type GlobalTheme } from 'naive-ui';
+import { storeToRefs } from 'pinia';
 import { useStartupTelemetry } from '@/composables/useStartupTelemetry';
+import { useSettingsStore } from '@/stores/settings';
 
-const theme = ref<GlobalTheme | null>(null);
+const settingsStore = useSettingsStore();
+const { themePreference } = storeToRefs(settingsStore);
+const theme = computed<GlobalTheme | null>(() => themePreference.value === 'dark' ? darkTheme : null);
 const { reportStartupTime } = useStartupTelemetry();
 
 onMounted(() => {

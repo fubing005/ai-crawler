@@ -81,6 +81,11 @@
         :model-value="uiStore.viewPreference"
         @update:model-value="onViewChange"
       />
+      <n-button quaternary circle aria-label="打开设置" @click="openSettings">
+        <template #icon>
+          <n-icon><SettingsOutline /></n-icon>
+        </template>
+      </n-button>
     </footer>
 
     <TaskDetailDrawer
@@ -89,19 +94,26 @@
       :now="crawlStore.nowTimestamp"
       @export="onExport"
     />
+
+    <SettingsDrawer v-model:show="settingsDrawerShow" @open-privacy="openPrivacy" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue';
-import { NEmpty, NButton } from 'naive-ui';
+import { ref, computed, onMounted, onBeforeUnmount, nextTick, h } from 'vue';
+import { NEmpty, NButton, NIcon, useNotification as useNaiveNotification } from 'naive-ui';
+import { SettingsOutline } from '@vicons/ionicons5';
+import { useRouter } from 'vue-router';
 import SmartURLInput from '@/components/SmartURLInput.vue';
 import ViewSwitcher from '@/components/ViewSwitcher.vue';
 import ProgressPanel from '@/components/simple/ProgressPanel.vue';
 import HistoryCard from '@/components/simple/HistoryCard.vue';
 import TaskDetailDrawer from '@/components/simple/TaskDetailDrawer.vue';
+import SettingsDrawer from '@/components/SettingsDrawer.vue';
 import { useUiStore, type ViewPreference } from '@/stores/ui';
 import { useCrawlStore } from '@/stores/crawl';
+import { useSettingsStore } from '@/stores/settings';
+import { useNotifications } from '@/composables/useNotifications';
 import { analyze, crawl, getCrawlProgress } from '@/api/analyze';
 import { mockExamples, mockAnalyzedFields } from '@/mocks/analyze-mock';
 import type { CrawlTaskRecord } from '@/types/crawl';
@@ -116,6 +128,11 @@ interface PendingUndo {
 
 const uiStore = useUiStore();
 const crawlStore = useCrawlStore();
+const settingsStore = useSettingsStore();
+const router = useRouter();
+const naiveNotification = useNaiveNotification();
+const { notify: notifyDesktop, requestPermission, permission: notificationPermission } = useNotifications();
+const settingsDrawerShow = ref(false);
 
 const url = ref('');
 const loading = ref(false);
@@ -197,13 +214,75 @@ async function runCrawl(target: string) {
     progress.value = 100;
     const record = buildRecord(target, 'completed', analyzeRes.page_title, extractedCount.value, analyzeRes.fields);
     crawlStore.addTask(record);
+    if (settingsStore.notificationPreference.enabled && settingsStore.notificationPreference.onComplete) {
+      void (async () => {
+        try {
+          if (notificationPermission.value !== 'granted') await requestPermission();
+          if (notificationPermission.value === 'granted') {
+            notifyDesktop('爬取完成', {
+              body: `${record.pageTitle} · 共 ${record.extractedCount} 条数据`,
+              tag: record.id,
+              onClick: (id: string) => {
+                crawlStore.setActiveTask(id);
+                drawerShow.value = true;
+              }
+            });
+          }
+        } catch {
+          // 静默降级：通知失败不影响主流程
+        }
+      })();
+    }
   } catch (err) {
     if (err instanceof DOMException && err.name === 'AbortError') return;
     setStatus('failed');
     hint.value = 'AI 暂时没找到字段，请稍后再试。';
     const failedFields = analyzeRes?.fields ?? [];
-    const record = buildRecord(target, 'failed', analyzeRes?.page_title ?? '', 0, failedFields);
-    crawlStore.addTask(record);
+    const failedRecord = buildRecord(target, 'failed', analyzeRes?.page_title ?? '', 0, failedFields);
+    crawlStore.addTask(failedRecord);
+    if (settingsStore.notificationPreference.enabled && settingsStore.notificationPreference.onFailure) {
+      const rawMsg = err instanceof Error ? err.message : String(err);
+      const errSummary = rawMsg.length > 80 ? rawMsg.slice(0, 80) + '…' : rawMsg;
+      void (async () => {
+        try {
+          if (notificationPermission.value !== 'granted') await requestPermission();
+          if (notificationPermission.value === 'granted') {
+            notifyDesktop('爬取失败', {
+              body: `${errSummary}，点击查看详情`,
+              tag: failedRecord.id,
+              onClick: (id: string) => {
+                crawlStore.setActiveTask(id);
+                drawerShow.value = true;
+              }
+            });
+          }
+        } catch {
+          // 静默降级：通知失败不影响主流程
+        }
+      })();
+      const notif = naiveNotification.error({
+        title: '爬取失败',
+        content: errSummary,
+        duration: 0,
+        meta: '点击重试或关闭',
+        action: () =>
+          h('span', { style: 'display: flex; gap: 8px;' }, [
+            h(
+              NButton,
+              {
+                size: 'small',
+                type: 'primary',
+                onClick: () => {
+                  onRetry();
+                  notif.close();
+                }
+              },
+              { default: () => '重试' }
+            ),
+            h(NButton, { size: 'small', onClick: () => notif.close() }, { default: () => '关闭' })
+          ])
+      });
+    }
   } finally {
     loading.value = false;
   }
@@ -264,6 +343,21 @@ function openDetail(id: string) {
   drawerShow.value = true;
 }
 
+function openSettings() {
+  settingsDrawerShow.value = true;
+}
+
+function openPrivacy() {
+  router.push({ name: 'privacy' });
+}
+
+function onKeyDownGlobal(e: KeyboardEvent) {
+  if ((e.ctrlKey || e.metaKey) && e.key === ',') {
+    e.preventDefault();
+    settingsDrawerShow.value = true;
+  }
+}
+
 function onExport(): void {
   // Phase 1 placeholder — export disabled in drawer/HistoryCard; kept to satisfy emit wiring.
   // Drawer export emit is no-arg; activeTask id would be read from crawlStore.activeTask?.id if needed.
@@ -290,9 +384,11 @@ function undoDelete() {
 
 onMounted(() => {
   crawlStore.startTick();
+  window.addEventListener('keydown', onKeyDownGlobal);
 });
 
 onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onKeyDownGlobal);
   abortController?.abort();
   crawlStore.stopTick();
   for (const p of [...pendingUndos.value].reverse()) {
