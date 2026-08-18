@@ -8,7 +8,9 @@ export interface AnalyzedField {
 export interface AnalyzeResponse {
   fields: AnalyzedField[];
   page_title: string;
-  detected_type: 'ecommerce' | 'news' | 'blog' | 'unknown';
+  detected_type: 'ecommerce' | 'news' | 'blog' | 'form' | 'unknown';
+  overall_confidence: number;
+  main_content_selector: string | null;
 }
 
 export type CrawlStage = 'analyzing' | 'extracting' | 'completed' | 'failed';

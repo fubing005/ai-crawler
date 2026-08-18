@@ -39,6 +39,8 @@ generated: 2026-07-30 13:21
 last_updated: 2026-08-17
 # Story 1-4 marked in-progress by dev-story workflow (2026-08-12)
 # Story 1-4 code review complete (7 patches fixed), moved to done (2026-08-17)
+# Story 2-1 marked in-progress by dev-story workflow (2026-08-17)
+# Story 2-1 implementation complete (pytest 24/24, vitest 166/166), moved to done (2026-08-18)
 project: vscode_bmad_method_test
 project_key: NOKEY
 tracking_system: file-system
@@ -54,8 +56,8 @@ development_status:
   epic-1-retrospective: optional
 
   # Epic 2: AI驱动的页面分析与数据提取 (6 Stories)
-  epic-2: backlog
-  2-1-url-input-page-structure-analysis: backlog
+  epic-2: in-progress
+  2-1-url-input-page-structure-analysis: done
   2-2-data-field-specification-extraction: backlog
   2-3-ai-result-preview-manual-adjustment: backlog
   2-4-ai-provider-basic-config: backlog

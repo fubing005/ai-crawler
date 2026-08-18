@@ -1,5 +1,14 @@
 # Deferred Work
 
+## Deferred from: Story 2-1 网址输入与页面结构分析 (2026-08-18)
+
+- 区域级可视化手动框选/高亮框/连接线/拖动定位 - 2-1 仅交付数据层 `main_content_selector` + 文案级展示（"已定位主要内容区域"），可视化交互由 Story 2-3 交付（其 AC 明确"高亮框、连接线、拖动"）
+- `crawl()` / `getCrawlProgress()` 仍走 mock 分支 - 真实提取端点 + WebSocket 进度由 Story 2-2 交付；`runCrawl` 的 analyze -> getCrawlProgress('mock-task') -> crawl 顺序本 story 未重排（deferred-work L14 既有项）
+- Celery Worker Pool / 浏览器连接池 - 2-1 同步分析请求在 FastAPI 事件循环内完成，池化由 Epic 3 爬取任务交付
+- AI 真实提供商（Ollama / OpenAI 等）+ 密钥环存储 + 配置 UI - Phase 1 分析器为 `HeuristicAnalyzer` 确定性启发式，`AIProvider` 抽象已预留，由 Story 2-4 交付
+- 后端打包进 Electron sidecar - 2-1 后端以独立 uvicorn 进程运行，打包集成由 Epic 11 交付
+- AIAnalysisProgress 完整组件（步骤文本/预计时间/取消按钮）- 2-1 复用 1-2 已交付 `ProgressPanel` stage `analyzing`，完整组件归 Epic 4 组件体系
+
 ## Deferred from: code review of 1-3-task-management-history (2026-08-10 — Round 4)
 
 - setActiveTask / nowTimestamp 30s tick 触发 pinia-plugin-persistedstate $subscribe 冗余 localStorage 序列化 [frontend/src/stores/crawl.ts] — `pick: ['history']` 限制写入字段，但 $subscribe 仍触发 history 完整序列化。pref concern 非 spec violation。deferred: Phase 2 性能优化阶段处理（可加 `paths` 选项或 shallow 兼容）

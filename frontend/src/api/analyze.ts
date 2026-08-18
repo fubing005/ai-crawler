@@ -10,7 +10,6 @@ export interface AnalyzeOptions {
 export type ProgressHandler = (progress: number, stage: CrawlStage, extractedCount: number) => void;
 
 const MOCK_BACKEND =
-  import.meta.env.DEV ||
   import.meta.env.MODE === 'test' ||
   import.meta.env.VITE_MOCK_BACKEND === 'true';
 
@@ -19,12 +18,24 @@ export async function analyze(url: string, options: AnalyzeOptions = {}): Promis
     await new Promise((r) => setTimeout(r, 800));
     return { ...mockAnalyzeResponse, page_title: `${mockAnalyzeResponse.page_title} — ${url}` };
   }
-  const target = `/api/v1/analyze?url=${encodeURIComponent(url)}`;
-  const res = await fetch(target, { signal: options.signal });
+  const res = await fetch('/api/v1/page-analyses', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url }),
+    signal: options.signal
+  });
   if (!res.ok) {
-    throw new Error(`analyze failed: ${res.status} ${res.statusText}`);
+    let code = 'ANALYZE_FAILED';
+    try {
+      const body = await res.json();
+      if (body?.error?.code) code = body.error.code;
+    } catch {
+      // 响应体非 JSON 时保留默认错误码
+    }
+    throw new Error(code);
   }
-  return (await res.json()) as AnalyzeResponse;
+  const body = await res.json();
+  return body.data as AnalyzeResponse;
 }
 
 export async function crawl(url: string, fields: string[], options: AnalyzeOptions = {}): Promise<{ rows: number }> {

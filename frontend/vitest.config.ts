@@ -4,9 +4,6 @@ import { resolve } from 'node:path';
 
 export default defineConfig({
   plugins: [vue()],
-  define: {
-    'import.meta.env.VITE_MOCK_BACKEND': JSON.stringify('true')
-  },
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
@@ -19,6 +16,7 @@ export default defineConfig({
     include: [
       'tests/unit/**/*.test.ts',
       'tests/components/**/*.test.ts',
+      'tests/api/**/*.test.ts',
       'tests/stores/**/*.test.ts',
       'tests/composables/**/*.test.ts'
     ],

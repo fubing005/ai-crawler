@@ -3,6 +3,8 @@ import type { AnalyzeResponse } from '@/types/analyze';
 export const mockAnalyzeResponse: AnalyzeResponse = {
   page_title: '示例电商商品页',
   detected_type: 'ecommerce',
+  overall_confidence: 0.9,
+  main_content_selector: 'ul.product-list',
   fields: [
     { name: 'title', selector: 'h1.product-title', confidence: 0.95, sample: '示例商品名称' },
     { name: 'price', selector: 'span.price', confidence: 0.92, sample: '¥299.00' },

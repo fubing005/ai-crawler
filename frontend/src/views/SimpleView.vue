@@ -17,7 +17,14 @@
         @submit="onSubmit"
       />
 
-      <p v-if="hint" class="simple-view__hint" role="status">{{ hint }}</p>
+      <p v-if="hint && state !== 'failed'" class="simple-view__hint" role="status">{{ hint }}</p>
+
+      <n-alert
+        v-else-if="hint"
+        type="error"
+        role="alert"
+        class="simple-view__hint"
+      >{{ hint }}</n-alert>
 
       <p v-else-if="state === 'idle'" class="simple-view__hint">
         尚未开始爬取。粘贴网址后将自动分析页面字段。
@@ -28,6 +35,11 @@
         :progress="progress"
         :stage="state"
         :extracted-count="extractedCount"
+      />
+
+      <AnalysisResultCard
+        v-if="analysisResult && state !== 'failed'"
+        :result="analysisResult"
       />
 
       <button
@@ -101,12 +113,13 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, nextTick, h } from 'vue';
-import { NEmpty, NButton, NIcon, useNotification as useNaiveNotification } from 'naive-ui';
+import { NEmpty, NButton, NIcon, NAlert, useNotification as useNaiveNotification } from 'naive-ui';
 import { SettingsOutline } from '@vicons/ionicons5';
 import { useRouter } from 'vue-router';
 import SmartURLInput from '@/components/SmartURLInput.vue';
 import ViewSwitcher from '@/components/ViewSwitcher.vue';
 import ProgressPanel from '@/components/simple/ProgressPanel.vue';
+import AnalysisResultCard from '@/components/simple/AnalysisResultCard.vue';
 import HistoryCard from '@/components/simple/HistoryCard.vue';
 import TaskDetailDrawer from '@/components/simple/TaskDetailDrawer.vue';
 import SettingsDrawer from '@/components/SettingsDrawer.vue';
@@ -117,6 +130,7 @@ import { useNotifications } from '@/composables/useNotifications';
 import { analyze, crawl, getCrawlProgress } from '@/api/analyze';
 import { mockExamples, mockAnalyzedFields } from '@/mocks/analyze-mock';
 import type { CrawlTaskRecord } from '@/types/crawl';
+import type { AnalyzeResponse } from '@/types/analyze';
 
 type State = 'idle' | 'analyzing' | 'extracting' | 'completed' | 'failed';
 
@@ -140,6 +154,7 @@ const state = ref<State>('idle');
 const progress = ref(0);
 const extractedCount = ref(0);
 const hint = ref('');
+const analysisResult = ref<AnalyzeResponse | null>(null);
 const bodyRef = ref<HTMLElement | null>(null);
 const examples = mockExamples;
 
@@ -161,6 +176,21 @@ const crawlHistoryItems = computed(() => {
 
 let abortController: AbortController | null = null;
 
+const ANALYZE_ERROR_HINTS: Record<string, string> = {
+  INVALID_URL: '网址格式不正确',
+  UNREACHABLE: '无法访问该网站',
+  ANALYSIS_TIMEOUT: '分析超时，请稍后再试'
+};
+const ERROR_SUGGESTION = '请检查网址拼写，或尝试其他网址';
+
+function analyzeErrorHint(raw: string): string {
+  const base = ANALYZE_ERROR_HINTS[raw] ?? '分析失败，请稍后再试';
+  if (raw === 'INVALID_URL' || raw === 'UNREACHABLE') {
+    return `${base}，${ERROR_SUGGESTION}`;
+  }
+  return base;
+}
+
 function setStatus(s: State) { state.value = s; }
 
 function buildRecord(target: string, status: 'completed' | 'failed', pageTitle: string, count: number, fields: CrawlTaskRecord['fields']): CrawlTaskRecord {
@@ -178,6 +208,7 @@ function buildRecord(target: string, status: 'completed' | 'failed', pageTitle: 
 async function runCrawl(target: string) {
   loading.value = true;
   hint.value = '';
+  analysisResult.value = null;
   abortController?.abort();
   abortController = new AbortController();
   setStatus('analyzing');
@@ -188,6 +219,7 @@ async function runCrawl(target: string) {
 
   try {
     analyzeRes = await analyze(target, { signal: abortController.signal });
+    analysisResult.value = analyzeRes;
     const fields = analyzeRes.fields.length
       ? analyzeRes.fields.map((f) => f.name)
       : mockAnalyzedFields;
@@ -236,7 +268,7 @@ async function runCrawl(target: string) {
   } catch (err) {
     if (err instanceof DOMException && err.name === 'AbortError') return;
     setStatus('failed');
-    hint.value = 'AI 暂时没找到字段，请稍后再试。';
+    hint.value = analyzeErrorHint(err instanceof Error ? err.message : String(err));
     const failedFields = analyzeRes?.fields ?? [];
     const failedRecord = buildRecord(target, 'failed', analyzeRes?.page_title ?? '', 0, failedFields);
     crawlStore.addTask(failedRecord);

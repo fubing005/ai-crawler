@@ -327,7 +327,7 @@ async function analyzeCurrent(url: string) {
     for (const f of result.fields) fieldChecked.value[f.name] = true;
     onboarding.setSelectedFields(selectedFields.value);
   } catch (e) {
-    analyzeResult.value = { page_title: '', detected_type: 'unknown', fields: [] };
+    analyzeResult.value = { page_title: '', detected_type: 'unknown', overall_confidence: 0, main_content_selector: null, fields: [] };
   } finally {
     analyzing.value = false;
   }
