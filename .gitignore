@@ -24,12 +24,13 @@ wheels/
 venv/
 env/
 ENV/
-.venv
+.venv/
 
 # Environment variables
 .env
 .env.local
 .env.*.local
+.venv
 
 # IDE
 .vscode/
