@@ -238,13 +238,13 @@ GLM-5.2 (Claude Code)
 - `HeuristicAnalyzer`：stdlib `html.parser` 零新依赖，确定性输出；`AIProvider` ABC + `get_provider()` 工厂预留 2-4
 - 前端：`analyze()` 真实分支 POST 化 + 信封解包 + 错误码透传；`MOCK_BACKEND` 收紧为 `MODE==='test' || VITE_MOCK_BACKEND==='true'`（移除 DEV 强制 mock）；`crawl()`/`getCrawlProgress()` 未动
 - 新组件 `AnalysisResultCard.vue`（纯展示，五类型标签、置信度四档色、sample 40 字符截断、<0.7 警告 role=alert、region/aria-label）；SimpleView 挂载于 analyze 成功后、getCrawlProgress 前，`runCrawl` 开头清空
-- 测试基线：pytest 24/24（tests/unit 3 文件）；vitest 166/166（20 文件，含 AnalysisResultCard 7 项、SimpleView 集成 4 项、api/analyze 5 项）；1-x 既有断言零回归
+- 测试基线：pytest 24/24（backend/tests/unit 3 文件；2026-08-20 应用户要求从根目录 tests/ 迁入 backend/，CLAUDE.md 命令同步更新）；vitest 166/166（20 文件，含 AnalysisResultCard 7 项、SimpleView 集成 4 项、api/analyze 5 项）；1-x 既有断言零回归
 - 边界项已记入 deferred-work.md（2-3 可视化框选 / 2-2 crawl+WS / Epic 3 池化 / 2-4 真实 AI / Epic 11 sidecar / Epic 4 AIAnalysisProgress）
 
 ### File List
 
 新建：
-- requirements.txt
+- backend/requirements.txt
 - backend/__init__.py、backend/app/__init__.py
 - backend/app/main.py
 - backend/app/api/__init__.py、backend/app/api/v1/__init__.py、backend/app/api/v1/page_analyses.py

@@ -69,7 +69,7 @@
 
 ```bash
 # 安装依赖
-pip install -r requirements.txt
+pip install -r backend/requirements.txt
 npm install
 
 # 启动开发服务器
@@ -78,9 +78,9 @@ npm run dev                                          # 前端 (Vue.js)
 npm run dev:electron                                 # Electron 开发模式
 
 # 测试
-pytest                                                   # 单元测试
-pytest tests/unit/test_example.py::test_name        # 单个测试
-pytest -k "test_keyword"                               # 过滤测试
+python -m pytest backend/tests                          # 后端单元测试
+python -m pytest backend/tests/unit/test_example.py::test_name  # 单个测试
+python -m pytest backend/tests -k "test_keyword"        # 过滤测试
 npm run test:e2e                                        # Playwright E2E 测试
 npx playwright test                                     # 直接运行 Playwright
 npx playwright test tests/e2e/test_file.spec.ts        # 单个 E2E 测试文件
@@ -218,6 +218,10 @@ backend/
 │   ├── services/      # 业务逻辑（模型中不访问数据库）
 │   ├── tasks/         # Celery 任务（必须从池使用 Playwright）
 │   └── core/          # 配置、依赖项
+├── tests/
+│   └── unit/          # pytest 单元测试
+├── conftest.py        # pytest 根配置
+├── requirements.txt   # Python 依赖
 ├── alembic/           # 数据库迁移（版本化）
 
 frontend/
@@ -227,11 +231,9 @@ frontend/
 │   ├── stores/         # Pinia stores（每个功能模块一个）
 │   ├── api/            # API 客户端（axios 拦截器）
 │   └── utils/          # 工具函数
-└── electron/          # Electron 主进程
-
-tests/
-├── playwright.config.ts
-└── e2e/               # Playwright E2E 测试
+├── tests/
+│   ├── playwright.config.ts
+│   └── e2e/               # Playwright E2E 测试
 ```
 
 ## 安全注意事项
